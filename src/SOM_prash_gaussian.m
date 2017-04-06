@@ -24,6 +24,7 @@ latticeCell = createInitLattice(dimDataInput,latticeSize); % weights initializat
 % % giving the final weights of the lattice in Cell form
 % finalLatticeCell = mat2cell(finalLattice,ones(1,latticeSize(1)),ones(1,latticeSize(2)),2); finalLatticeCell = cellfun(@(x)reshape(x,2,1),finalLatticeCell,'un',0);
 
+% plotting density plot
 [densityLattice, ~, histoData] = calcDensityLattice(finalLattice,dataInput,size(latticeCell));
 densityLattice = mat2gray(densityLattice);
 figure; imagesc(densityLattice); colormap(flipud(gray)); colorbar; title('Density of Inputs mapped to each Prototype')
@@ -80,7 +81,7 @@ alpha = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIte
     x = dataInput(:,randi(size(dataInput,2)));
    
     % find euclidian distances and difference between chosen x and all W's
-    differenceMatrix = repmat(reshape(x,1,1,[]),size(lattice,1),size(lattice,2),1) - lattice; % a 3D matrix of difference between every weight and x
+    differenceMatrix = repmat(reshape(x,1,1,[]),[size(lattice,1),size(lattice,2),1]) - lattice; % a 3D matrix of difference between every weight and x
     distToXMatrix = sqrt(sum((differenceMatrix).^2,3)); % finding norm or eucledian distance
   
     % find the winner = c = [win_row win_col]
@@ -91,7 +92,7 @@ alpha = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIte
     neighbourhoodFn = makeNeighbourhoodFn(latticeIndices,c,radius);
     
     % update the weights - Learning rule
-    lattice = lattice + alpha * repmat(neighbourhoodFn,1,1,size(differenceMatrix,3)) .* differenceMatrix;
+    lattice = lattice + alpha * repmat(neighbourhoodFn,[1,1,size(differenceMatrix,3)]) .* differenceMatrix;
     
     % Checking for convergence every 1000 steps
 %     if mod(i,1000) == 0
@@ -154,7 +155,7 @@ for i = 1:size(dataInput,2)
     x = dataInput(:,i);
     
     % find euclidian distances and difference between chosen x and all W's
-    differenceMatrix = repmat(reshape(x,1,1,[]),size(lattice,1),size(lattice,2),1) - lattice - lattice; % a 3D matrix
+    differenceMatrix = repmat(reshape(x,1,1,[]),[size(lattice,1),size(lattice,2),1]) - lattice; % a 3D matrix
     distToXMatrix = sqrt(sum((differenceMatrix).^2,3)); % a 2D matrix for euclidian distances to x
     
     % find the winner = c = [win_row win_col]
@@ -172,7 +173,7 @@ end
 
 function neighbourhoodFn = makeNeighbourhoodFn(latticeIndices,c,radius)
 
-distNeighbour = sum(abs(latticeIndices - repmat(reshape(c,1,1,[]),size(latticeIndices,1),size(latticeIndices,2),1)),3); % Manhattan distance metric for the neighbourhood function
+distNeighbour = sum(abs(latticeIndices - repmat(reshape(c,1,1,[]),[size(latticeIndices,1),size(latticeIndices,2),1])),3); % Manhattan distance metric for the neighbourhood function
 % EqDistNeighbour = sqrt(sum((latticeIndices - reshape(c,1,1,[])).^2,3)); % eucleidian distance metric for the neighbourhood function
 neighbourhoodFn = exp(-((distNeighbour)./(radius)).^2);
 
@@ -191,8 +192,8 @@ function x1 = createGaussians(dim,var,mean)
 % dimensions set by [mean1 mean2]
 x1 = sqrt(var)*randn(dim(1),dim(2));
 % x1=detrend(x1);
-x1(1,:) = x1(1,:) + repmat(mean(1),1,size(x1,2));
-x1(2,:) = x1(2,:) + repmat(mean(2),1,size(x1,2));
+x1(1,:) = x1(1,:) + repmat(mean(1),[1,size(x1,2)]);
+x1(2,:) = x1(2,:) + repmat(mean(2),[1,size(x1,2)]);
 end
 
 
