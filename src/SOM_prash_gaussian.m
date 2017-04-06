@@ -1,4 +1,4 @@
-% hw6 Problem 2
+% hw6 Problem 2 (updated)
 function SOM2
 % Prashant Kalvapalle 
 % Comp 504 HW6 - Base code for all problems
