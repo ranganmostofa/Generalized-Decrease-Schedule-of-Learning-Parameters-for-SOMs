@@ -1,0 +1,56 @@
+----------SOM LEARN STARTED----------
+***Initial weights***
+	+1.007233 	+0.014414 	-3.795678 	+4.388371 	+10.945246 	+2.367907 	+0.187409 	-4.271491 	-1.411645 	+11.005827 	+3.097470 	+3.734239 	-0.825040 	+7.910196 	-2.203829 	+10.814059 	+6.703561 	+5.222007 	+5.289639 	+2.824663 	+5.062107 	+1.655847 	+1.162479 	+10.101889 	+9.707665 	+7.071038 	+2.723881 	-1.631921 	-2.709256 	+10.150795 	+0.842328 	-4.258592 	+5.185652 	+8.443029 	+7.720310 	+1.059339 	+9.257702 	+11.563167 	+2.447290 	+5.049300 	+2.203933 	+10.520325 	+2.631271 	+2.078309 	-3.439440 	+2.513107 	-0.088904 	+5.318055 	+0.193703 	+10.331122 	+10.265228 	+1.516050 	+11.631526 	+8.112314 	+8.023215 	+2.189567 	+11.471393 	+3.214853 	+8.601077 	-1.164829 	+2.932269 	+3.775758 	-2.145767 	+0.489651 
+	+10.921293 	+1.003208 	+10.701595 	+6.692277 	+6.911898 	-2.828002 	+2.890691 	+8.888296 	+0.746009 	-3.016270 	+3.211815 	+5.555830 	-1.461345 	+8.398371 	-4.140217 	+6.724166 	+4.011440 	+1.341731 	+11.196703 	+9.150874 	-4.279232 	+7.089805 	+5.476455 	+2.753462 	+1.423777 	+9.304415 	+4.196794 	-4.628424 	+4.940340 	-4.059581 	+1.816241 	+4.764456 	+10.499596 	-0.405074 	+1.155668 	-3.909809 	+10.137493 	+7.106894 	+8.994173 	-4.076364 	-1.444698 	+11.574453 	+10.299419 	+8.830717 	+5.811540 	+5.971548 	+7.941305 	-3.205725 	+6.825703 	-0.913839 	+11.091299 	-0.213440 	-4.213828 	-4.363162 	+8.115348 	+0.739166 	-2.523843 	+6.330909 	+8.969295 	+3.801845 	+7.913895 	+9.466743 	+7.369998 	+10.291794 
+***Learning rate***
+	0.1
+***Neighborhood radius***
+	4
+***Stopping Criteria = max. learn_steps OR error < tolerance***
+	Max learning steps
+	20000
+	Error Tolerance
+	1%
+***Initial Error***
+	NaN%
+***Performance indicators while running SOM algorithm***
+	iter: 0       , learning_rate:0.100000, neighborhood_radius:4, error:NaN%
+	iter: 500     , learning_rate:0.090000, neighborhood_radius:4, error:NaN%
+	iter: 1000    , learning_rate:0.082000, neighborhood_radius:3, error:NaN%
+	iter: 1500    , learning_rate:0.075455, neighborhood_radius:3, error:NaN%
+	iter: 2000    , learning_rate:0.070000, neighborhood_radius:3, error:NaN%
+	iter: 2500    , learning_rate:0.065385, neighborhood_radius:3, error:NaN%
+	iter: 3000    , learning_rate:0.061429, neighborhood_radius:3, error:NaN%
+	iter: 3500    , learning_rate:0.058000, neighborhood_radius:3, error:NaN%
+	iter: 4000    , learning_rate:0.055000, neighborhood_radius:2, error:NaN%
+	iter: 4500    , learning_rate:0.052353, neighborhood_radius:2, error:NaN%
+	iter: 5000    , learning_rate:0.050000, neighborhood_radius:2, error:NaN%
+	iter: 5500    , learning_rate:0.047895, neighborhood_radius:2, error:NaN%
+	iter: 6000    , learning_rate:0.046000, neighborhood_radius:2, error:NaN%
+	iter: 6500    , learning_rate:0.044286, neighborhood_radius:2, error:NaN%
+	iter: 7000    , learning_rate:0.042727, neighborhood_radius:2, error:NaN%
+	iter: 7500    , learning_rate:0.041304, neighborhood_radius:2, error:NaN%
+	iter: 8000    , learning_rate:0.040000, neighborhood_radius:2, error:NaN%
+	iter: 8500    , learning_rate:0.038800, neighborhood_radius:2, error:NaN%
+	iter: 9000    , learning_rate:0.037692, neighborhood_radius:2, error:NaN%
+	iter: 9500    , learning_rate:0.036667, neighborhood_radius:2, error:NaN%
+	iter: 10000   , learning_rate:0.035714, neighborhood_radius:2, error:NaN%
+	iter: 10500   , learning_rate:0.034828, neighborhood_radius:2, error:NaN%
+	iter: 11000   , learning_rate:0.034000, neighborhood_radius:2, error:NaN%
+	iter: 11500   , learning_rate:0.033226, neighborhood_radius:2, error:NaN%
+	iter: 12000   , learning_rate:0.032500, neighborhood_radius:2, error:NaN%
+	iter: 12500   , learning_rate:0.031818, neighborhood_radius:2, error:NaN%
+	iter: 13000   , learning_rate:0.031176, neighborhood_radius:2, error:NaN%
+	iter: 13500   , learning_rate:0.030571, neighborhood_radius:2, error:NaN%
+	iter: 14000   , learning_rate:0.030000, neighborhood_radius:2, error:NaN%
+	iter: 14500   , learning_rate:0.029459, neighborhood_radius:2, error:NaN%
+	iter: 15000   , learning_rate:0.028947, neighborhood_radius:2, error:NaN%
+	iter: 15500   , learning_rate:0.028462, neighborhood_radius:2, error:NaN%
+	iter: 16000   , learning_rate:0.028000, neighborhood_radius:2, error:NaN%
+	iter: 16500   , learning_rate:0.027561, neighborhood_radius:2, error:NaN%
+	iter: 17000   , learning_rate:0.027143, neighborhood_radius:2, error:NaN%
+	iter: 17500   , learning_rate:0.026744, neighborhood_radius:2, error:NaN%
+	iter: 18000   , learning_rate:0.026364, neighborhood_radius:2, error:NaN%
+	iter: 18500   , learning_rate:0.026000, neighborhood_radius:2, error:NaN%
+	iter: 19000   , learning_rate:0.025652, neighborhood_radius:2, error:NaN%
+	iter: 19500   , learning_rate:0.025319, neighborhood_radius:2, error:NaN%
