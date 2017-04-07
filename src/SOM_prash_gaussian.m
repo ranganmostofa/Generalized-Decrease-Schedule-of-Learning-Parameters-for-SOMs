@@ -1,4 +1,4 @@
-% hw6 Problem 2 (updated)
+% SOM for 2d gaussians
 function SOM2
 % Prashant Kalvapalle 
 % Comp 504 HW6 - Base code for all problems
