@@ -12,6 +12,8 @@ initRadius = max(latticeSize); % Initial radius of influence
 numIters = 20000; % number of learning steps
 alphaI = .8; % learning rate
 
+nEmbedEval = 100;
+
 % Input data entry
 dataInput = [createGaussians([2 1000],.1,[7 7]), createGaussians([2 1000],.1,[0 7]), createGaussians([2 1000],.1,[7 0]), createGaussians([2 1000],.1,[0 0]),]; % each COLUMN is a data point
 
@@ -19,7 +21,7 @@ dimDataInput = size(dataInput,1); % gives the dimensionality of data space
 latticeCell = createInitLattice(dimDataInput,latticeSize); % weights initialization
 
 % Perform self organization
-[finalLattice, stepsToConv, embedding] = selfOrganize(latticeCell,dataInput,numIters,initRadius,alphaI);
+[finalLattice, stepsToConv, embedding] = selfOrganize(latticeCell,dataInput,numIters,initRadius,alphaI,nEmbedEval);
 
 % % giving the final weights of the lattice in Cell form
 % finalLatticeCell = mat2cell(finalLattice,ones(1,latticeSize(1)),ones(1,latticeSize(2)),2); finalLatticeCell = cellfun(@(x)reshape(x,2,1),finalLatticeCell,'un',0);
@@ -50,12 +52,12 @@ end
 
 %% plotting embedding history
 figure;
-plot(1:numIters, embedding(1,:)); xlabel('Learning steps'); ylabel('Embedding metric'); title(['Plot of Embedding history'])
+plot(embedding(6,:), embedding(1,:)); xlabel('Learning steps'); ylabel('Embedding metric'); title(['Plot of Embedding history'])
 
 %% plotting Mean and variance changes along with decrease schedules
 figure(3);
-subplot(2,2,1); plot(1:numIters, embedding([3,5],:)); xlabel('Learning steps'); ylabel('Embedding metric'); title('Plot of Variance embedding'); legend('VarianceData','VariancePrototype')
-subplot(2,2,2); plot(1:numIters, embedding([2,4],:)); xlabel('Learning steps'); ylabel('Embedding metric'); title('Plot of Mean embedding'); legend('meanData','meanPrototype')
+subplot(2,2,1); plot(embedding(6,:), embedding([3,5],:)); xlabel('Learning steps'); ylabel('Embedding metric'); title('Plot of Variance embedding'); legend('VarianceData','VariancePrototype')
+subplot(2,2,2); plot(embedding(6,:), embedding([2,4],:)); xlabel('Learning steps'); ylabel('Embedding metric'); title('Plot of Mean embedding'); legend('meanData','meanPrototype')
 decayIters = 10000; radius = zeros(1,numIters); alpha = radius;
 for i = 1:numIters
     radius(i) = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
@@ -66,7 +68,7 @@ subplot(2,2,4); plot(1:numIters, alpha); xlabel('Learning steps'); ylabel('alpha
 end
 
 
-function [finalLattice, stepsToConv, embedding] = selfOrganize(latticeCell,dataInput,numIters,initRadius,alphaI)
+function [finalLattice, stepsToConv, embedding] = selfOrganize(latticeCell,dataInput,numIters,initRadius,alphaI,nEmbedEval)
 % the self organizing map steps here
 
 % convert the input lattice cell into a multi-dimensional Matrix
@@ -88,11 +90,11 @@ xlabel('First data dimension'); ylabel('Second data dimension'); title('Plot of 
 dum = 2;
 % [~, oldMapData, ~] = calcDensityLattice(lattice,dataInput,size(latticeCell)); % table of the prototype where each data point maps
 stepsToConv = numIters;
-embedding = ones(5,numIters);
+embedding = ones(6,numIters/nEmbedEval);
 
 for i = 1:numIters
     %     radius = initRadius; % can do decay here
-    embedding(:,i) = calcEmbed(dataInput, lattice);
+%     embedding(:,i) = calcEmbed(dataInput, lattice); embedding(6,i) = i;
     decayIters = 10000;
     radius = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
     alpha = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIters/2.5) + .125 * (i > decayIters/2.5 & i <= decayIters*.8)+ .025 * (i > decayIters*.8));
@@ -114,11 +116,11 @@ for i = 1:numIters
     % update the weights - Learning rule
     lattice = lattice + alpha * repmat(neighbourhoodFn,[1,1,size(differenceMatrix,3)]) .* differenceMatrix;
     
-%     % Calculate embedding every 100 steps
-%     nEmbedEval = 100;
-%     if mod(i,nEmbedEval) == 0
-%         embedding(:,i) = calcEmbed(dataInput, lattice);
-%     end
+    % Calculate embedding every 100 steps
+    if mod(i,nEmbedEval) == 0
+        indexEmbed = i/nEmbedEval;
+        embedding([1:5],indexEmbed) = calcEmbed(dataInput, lattice); embedding(6,indexEmbed) = i;
+    end
     
     % making plots at particular learning steps as defined in the vector
     if sum(i == [decayIters/10 decayIters/2 decayIters])
