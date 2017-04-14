@@ -21,7 +21,7 @@ dimDataInput = size(dataInput,1); % gives the dimensionality of data space
 latticeCell = createInitLattice(dimDataInput,latticeSize); % weights initialization
 
 % Perform self organization
-[finalLattice, stepsToConv, embedding] = selfOrganize(latticeCell,dataInput,numIters,initRadius,alphaI,nEmbedEval);
+[finalLattice, stepsToConv, embedding, topology] = selfOrganize(latticeCell,dataInput,numIters,initRadius,alphaI,nEmbedEval);
 
 % % giving the final weights of the lattice in Cell form
 % finalLatticeCell = mat2cell(finalLattice,ones(1,latticeSize(1)),ones(1,latticeSize(2)),2); finalLatticeCell = cellfun(@(x)reshape(x,2,1),finalLatticeCell,'un',0);
@@ -50,9 +50,12 @@ end
 %% plotting histogram
 % plotHistoChart(histoData);
 
-%% plotting embedding history
+%% plotting embedding and topology history
 figure;
-plot(embedding(6,:), embedding(1,:)); xlabel('Learning steps'); ylabel('Embedding metric'); title(['Plot of Embedding history'])
+subplot(2,1,1);
+plot(embedding(6,:), embedding(1,:)); xlabel('Learning steps'); ylabel('Embedding error metric'); title('Plot of Embedding History')
+subplot(2,1,2);
+plot(embedding(6,:), topology(1,:)); xlabel('Learning steps'); ylabel('Topology error metric'); title('Plot of Topology History')
 
 %% plotting Mean and variance changes along with decrease schedules
 figure(3);
@@ -68,7 +71,7 @@ subplot(2,2,4); plot(1:numIters, alpha); xlabel('Learning steps'); ylabel('alpha
 end
 
 
-function [finalLattice, stepsToConv, embedding] = selfOrganize(latticeCell,dataInput,numIters,initRadius,alphaI,nEmbedEval)
+function [finalLattice, stepsToConv, embedding, topology] = selfOrganize(latticeCell,dataInput,numIters,initRadius,alphaI,nEmbedEval)
 % the self organizing map steps here
 
 % convert the input lattice cell into a multi-dimensional Matrix
@@ -90,7 +93,7 @@ xlabel('First data dimension'); ylabel('Second data dimension'); title('Plot of 
 dum = 2;
 % [~, oldMapData, ~] = calcDensityLattice(lattice,dataInput,size(latticeCell)); % table of the prototype where each data point maps
 stepsToConv = numIters;
-embedding = ones(6,numIters/nEmbedEval);
+embedding = ones(6,numIters/nEmbedEval); topology = zeros(1,numIters/nEmbedEval);
 
 for i = 1:numIters
     %     radius = initRadius; % can do decay here
@@ -119,7 +122,8 @@ for i = 1:numIters
     % Calculate embedding every 100 steps
     if mod(i,nEmbedEval) == 0
         indexEmbed = i/nEmbedEval;
-        embedding([1:5],indexEmbed) = calcEmbed(dataInput, lattice); embedding(6,indexEmbed) = i;
+        embedding(1:5,indexEmbed) = calcEmbed(dataInput, lattice); embedding(6,indexEmbed) = i;
+        topology(1,indexEmbed)  = calcDensityLattice(lattice,dataInput,size(latticeCell));  
     end
     
     % making plots at particular learning steps as defined in the vector
@@ -161,11 +165,11 @@ finalLattice = lattice;
 end
 
 
-function [densityLattice,mapData,histoData]  = calcDensityLattice(lattice,dataInput,sizeOflatticeCell)
+function topologyMetric  = calcDensityLattice(lattice,dataInput,~)
 % calculates the prototype each data point is mapped to
-densityLattice = zeros(sizeOflatticeCell);
-mapData = zeros([2 size(dataInput,2)]);
-histoData = zeros([sizeOflatticeCell,4]);
+% densityLattice = zeros(sizeOflatticeCell);
+topologyMetric = 0; % mapData = zeros([2 size(dataInput,2)]);
+% histoData = zeros([sizeOflatticeCell,4]);
 % seq = [ones(1,1000) 2*ones(1,1000) 3*ones(1,1000) 4*ones(1,1000)];
 for i = 1:size(dataInput,2)
     x = dataInput(:,i);
@@ -177,13 +181,20 @@ for i = 1:size(dataInput,2)
     % find the winner = c = [win_row win_col]
     [~, winner] = min(distToXMatrix(:)); [win_row, win_col] = ind2sub(size(distToXMatrix), winner);
     c = [win_row win_col];
-    % update the density lattice
-    densityLattice(c(1),c(2)) = densityLattice(c(1),c(2)) + 1;
-    mapData(:,i) = [win_row win_col];
-    histoWrite = ([1 0 0 0] * (i <= 1000) + [0 1 0 0] * (i > 1000 & i <= 2000) + [0 0 1 0] * (i > 2000 & i <= 3000) + [0 0 0 1] * (i > 3000 & i <= 4000));
-    histoData(c(1),c(2),:) = histoData(c(1),c(2),:) + (reshape(histoWrite,1,1,[]));
+    
+    % finding second winner
+    distToXMatrix(c(1),c(2)) = inf;
+    [~, winner2] = min(distToXMatrix(:)); [win2_row, win2_col] = ind2sub(size(distToXMatrix), winner2);
+    c2 = [win2_row win2_col];
+    topologyMetric = topologyMetric + ~(sum(abs(c - c2)) == 1);
+    
+%     % update the density lattice
+%     densityLattice(c(1),c(2)) = densityLattice(c(1),c(2)) + 1;
+%     mapData(:,i) = [win_row win_col];
+%     histoWrite = ([1 0 0 0] * (i <= 1000) + [0 1 0 0] * (i > 1000 & i <= 2000) + [0 0 1 0] * (i > 2000 & i <= 3000) + [0 0 0 1] * (i > 3000 & i <= 4000));
+%     histoData(c(1),c(2),:) = histoData(c(1),c(2),:) + (reshape(histoWrite,1,1,[]));
 end
-
+topologyMetric = topologyMetric/1;
 end
 
 
