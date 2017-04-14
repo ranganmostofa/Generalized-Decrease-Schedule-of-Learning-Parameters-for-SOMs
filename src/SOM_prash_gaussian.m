@@ -19,10 +19,10 @@ dataInput = [createGaussians([2 1000],.1,[7 7]), createGaussians([2 1000],.1,[0 
 dI = reshape(dataInput',[],4,2); % resheped to give data classes in columns, and data co-ordinates in 3rd dimension
 
 dimDataInput = size(dataInput,1); % gives the dimensionality of data space
-latticeCell = createInitLattice(dimDataInput,latticeSize); % weights initialization
+lattice = createInitLattice(dimDataInput,latticeSize, mean(dataInput,2), std(dataInput,0,2)); % weights initialization
 
 % Perform self organization
-[finalLattice, stepsToConv, embedding, topology] = selfOrganize(latticeCell,dataInput,dI,numIters,initRadius,alphaI,nEmbedEval);
+[finalLattice, stepsToConv, embedding, topology] = selfOrganize(lattice,dataInput,dI,numIters,initRadius,alphaI,nEmbedEval);
 
 % % giving the final weights of the lattice in Cell form
 % finalLatticeCell = mat2cell(finalLattice,ones(1,latticeSize(1)),ones(1,latticeSize(2)),2); finalLatticeCell = cellfun(@(x)reshape(x,2,1),finalLatticeCell,'un',0);
@@ -40,67 +40,19 @@ else
 end
 
 %% plotting final prototype configuration w coloured known data classes
-% figure;
-% dI = reshape(dataInput',[],4,2); hold on;
-% plot(dI(:,1,1),dI(:,1,2),'r.');  plot(dI(:,2,1),dI(:,2,2),'m.');  plot(dI(:,3,1),dI(:,3,2),'g.');  plot(dI(:,4,1),dI(:,4,2),'y.');
-% plot(finalLattice(:,:,1),finalLattice(:,:,2),'ko','MarkerFaceColor','k','MarkerSize',4);
-% plot(finalLattice(:,:,1),finalLattice(:,:,2),'b-'); plot(finalLattice(:,:,1)',finalLattice(:,:,2)','b-');
-% xlabel('First data dimension'); ylabel('Second data dimension'); title(['Plot of prototypes in input space: Final after ',num2str(stepsToConv),' Learning Steps'])
-% legend('Input data1','Input data2','Input data3','Input data4','Prototype vectors')
+plotFinalMap(dI,finalLattice,stepsToConv)
 
 %% plotting histogram
 % plotHistoChart(histoData);
 
-%% plotting Mean and variance changes along with decrease schedules
-figure(3);
-subplot(2,2,1); plot(embedding(6,:), embedding([3,5],:)); xlabel('Learning steps'); ylabel('Embedding metric'); title('Plot of Variance embedding'); legend('VarianceData','VariancePrototype')
-subplot(2,2,2); plot(embedding(6,:), embedding([2,4],:)); xlabel('Learning steps'); ylabel('Embedding metric'); title('Plot of Mean embedding'); legend('meanData','meanPrototype')
-decayIters = 10000; radius = zeros(1,numIters); alpha = radius;
-for i = 1:numIters
-    radius(i) = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
-    alpha(i) = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIters/2.5) + .125 * (i > decayIters/2.5 & i <= decayIters*.8)+ .025 * (i > decayIters*.8));
-end
-subplot(2,2,3); plot(1:numIters, radius); xlabel('Learning steps'); ylabel('Radius'); title('Plot of radius decrease schedule');
-subplot(2,2,4); plot(1:numIters, alpha); xlabel('Learning steps'); ylabel('alpha'); title('Plot of alpha decrease schedule');
-
-%% plotting embedding and topology history
-avEmbed = movmean(embedding(1,:),10);
-avTopo = movmean(topology(1,:),10); 
-
-figure;
-subplot(3,1,1);
-plot(embedding(6,:), embedding(1,:)); xlabel('Learning steps'); ylabel('Embedding error metric'); title('Plot of Embedding History')
-hold on; plot(embedding(6,:), avEmbed,'r');
-subplot(3,1,2);
-plot(embedding(6,:), topology(1,:)); xlabel('Learning steps'); ylabel('Topology error metric'); title('Plot of Topology History')
-hold on; plot(embedding(6,:), avTopo,'r');
-subplot(3,1,3);yyaxis left;
-plot(1:numIters, radius); xlabel('Learning steps'); ylabel('Radius'); title('Plot of radius and alpha decrease schedule');
-yyaxis right; plot(1:numIters, alpha); ylabel('alpha');
-
-%% plotting sum of embedding and topology
-totalError = embedding(1,:) +  topology(1,:)/(max(topology(1,:))/2);
-avTotalError = movmean(totalError,10);
-avEmbed = movmean(embedding(1,:),10);
-avTopo = movmean(topology(1,:),10); 
-
-figure;
-subplot(2,1,1);
-plot(embedding(6,:), totalError); xlabel('Learning steps'); ylabel('Total error metric'); title('Plot of Total Error History')
-hold on; plot(embedding(6,:), avTotalError,'r');
-subplot(2,1,2);yyaxis left;
-plot(1:numIters, radius); xlabel('Learning steps'); ylabel('Radius'); title('Plot of radius and alpha decrease schedule');
-yyaxis right; plot(1:numIters, alpha); ylabel('alpha');
+%% plot other things related to embedding
+plotErrorStuff(embedding,topology, initRadius,alphaI,numIters)
 
 end
 
 
-function [finalLattice, stepsToConv, embedding, topology] = selfOrganize(latticeCell,dataInput,dI,numIters,initRadius,alphaI,nEmbedEval)
+function [finalLattice, stepsToConv, embedding, topology] = selfOrganize(lattice,dataInput,dI,numIters,initRadius,alphaI,nEmbedEval)
 % the self organizing map steps here
-
-% convert the input lattice cell into a multi-dimensional Matrix
-Z = cellfun(@(x)reshape(x,1,1,[]),latticeCell,'un',0);
-lattice = cell2mat(Z); % this is a multi-dimensional Matrix, with third dimension holding different input dimensions
 
 r = (1:size(lattice,1))';c = 1:size(lattice,2);
 latticeIndices(:,:,1) = r(:,ones(1,size(lattice,2))); latticeIndices(:,:,2) = c(ones(1,size(lattice,1)),:);  % latticeIndices : holds the i,j indices of the 2d lattice space
@@ -141,7 +93,7 @@ for i = 1:numIters
     if mod(i,nEmbedEval) == 0
         indexEmbed = i/nEmbedEval;
         embedding(1:5,indexEmbed) = calcEmbed(dataInput, lattice); embedding(6,indexEmbed) = i;
-        topology(1,indexEmbed)  = calcTopology(lattice,dataInput,size(latticeCell));  
+        topology(1,indexEmbed)  = calcTopology(lattice,dataInput);  
     end
     
     % making plots at particular learning steps as defined in the vector
@@ -150,22 +102,6 @@ for i = 1:numIters
         plotMappings(dI,lattice,i,dum)
         dum = dum + 1;
     end
-    %     % making plots every 1000 learning steps to visually approximate
-    %     % learning steps to convergence
-    %         if ~mod(i,1000)
-    % %         Plot the mapping and input data
-    %         figure(2)
-    % %         subplot(2,2,dum);
-    %         dI = reshape(dataInput',[],4,2); hold on;
-    %         plot(dI(:,1,1),dI(:,1,2),'r.');  plot(dI(:,2,1),dI(:,2,2),'m.');  plot(dI(:,3,1),dI(:,3,2),'g.');  plot(dI(:,4,1),dI(:,4,2),'y.');
-    %         plot(lattice(:,:,1),lattice(:,:,2),'ko','MarkerFaceColor','k','MarkerSize',4);
-    %         plot(lattice(:,:,1),lattice(:,:,2),'b-'); plot(lattice(:,:,1)',lattice(:,:,2)','b-');
-    %         xlabel('First data dimension'); ylabel('Second data dimension'); title(['Plot of prototypes in input space at ',num2str(i),' Learning Steps'])
-    %         legend('Input data1','Input data2','Input data3','Input data4','Prototype vectors')
-    %         hold off;
-    %         drawnow;
-    % %         dum = dum + 1;
-    %         end
     
     if stepsToConv < numIters
         break
@@ -177,7 +113,7 @@ finalLattice = lattice;
 end
 
 
-function topologyMetric  = calcTopology(lattice,dataInput,~)
+function topologyMetric  = calcTopology(lattice,dataInput)
 % calculates the neighbourhood of top two winners for some randomly sampled data points
 % densityLattice = zeros(sizeOflatticeCell);
 % histoData = zeros([sizeOflatticeCell,4]);
@@ -223,10 +159,13 @@ neighbourhoodFn = exp(-((distNeighbour)./(radius)).^2);
 end
 
 
-function latticeCell = createInitLattice(dimDataInput,latticeSize)
-% creates random weight vectors in a cell
-latticeCell = cell(latticeSize);
-latticeCell = arrayfun(@(x) rand(dimDataInput,1),latticeCell, 'uni',0);
+function lattice = createInitLattice(dimDataInput,latticeSize, dataMean, dataSD)
+% creates random weight vectors in a 3d matrix
+
+meanMatrix = repmat(reshape(dataMean,1,1,[]),latticeSize);
+sdMatrix = repmat(reshape(dataSD/10,1,1,[]),latticeSize);
+
+lattice = rand([latticeSize dimDataInput]) .* sdMatrix + meanMatrix;
 end
 
 
@@ -287,3 +226,57 @@ function plotMappings(dI,lattice,i,dum)
 
 end
 
+
+function plotFinalMap(dI,finalLattice,stepsToConv)
+% plotting final prototype configuration w coloured known data classes
+figure;
+hold on;
+plot(dI(:,1,1),dI(:,1,2),'r.');  plot(dI(:,2,1),dI(:,2,2),'m.');  plot(dI(:,3,1),dI(:,3,2),'g.');  plot(dI(:,4,1),dI(:,4,2),'y.');
+plot(finalLattice(:,:,1),finalLattice(:,:,2),'ko','MarkerFaceColor','k','MarkerSize',4);
+plot(finalLattice(:,:,1),finalLattice(:,:,2),'b-'); plot(finalLattice(:,:,1)',finalLattice(:,:,2)','b-');
+xlabel('First data dimension'); ylabel('Second data dimension'); title(['Plot of prototypes in input space: Final after ',num2str(stepsToConv),' Learning Steps'])
+legend('Input data1','Input data2','Input data3','Input data4','Prototype vectors')
+end
+
+function plotErrorStuff(embedding,topology, initRadius,alphaI,numIters)
+
+%% plotting Mean and variance changes along with decrease schedules
+figure(3);
+subplot(2,2,1); plot(embedding(6,:), embedding([3,5],:)); xlabel('Learning steps'); ylabel('Embedding metric'); title('Plot of Variance embedding'); legend('VarianceData','VariancePrototype')
+subplot(2,2,2); plot(embedding(6,:), embedding([2,4],:)); xlabel('Learning steps'); ylabel('Embedding metric'); title('Plot of Mean embedding'); legend('meanData','meanPrototype')
+decayIters = 10000; radius = zeros(1,numIters); alpha = radius;
+for i = 1:numIters
+    radius(i) = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
+    alpha(i) = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIters/2.5) + .125 * (i > decayIters/2.5 & i <= decayIters*.8)+ .025 * (i > decayIters*.8));
+end
+subplot(2,2,3); plot(1:numIters, radius); xlabel('Learning steps'); ylabel('Radius'); title('Plot of radius decrease schedule');
+subplot(2,2,4); plot(1:numIters, alpha); xlabel('Learning steps'); ylabel('alpha'); title('Plot of alpha decrease schedule');
+
+%% plotting embedding and topology history
+avEmbed = movmean(embedding(1,:),10);
+avTopo = movmean(topology(1,:),10); 
+
+figure;
+subplot(3,1,1);
+plot(embedding(6,:), embedding(1,:)); xlabel('Learning steps'); ylabel('Embedding error metric'); title('Plot of Embedding History')
+hold on; plot(embedding(6,:), avEmbed,'r');
+subplot(3,1,2);
+plot(embedding(6,:), topology(1,:)); xlabel('Learning steps'); ylabel('Topology error metric'); title('Plot of Topology History')
+hold on; plot(embedding(6,:), avTopo,'r');
+subplot(3,1,3);yyaxis left;
+plot(1:numIters, radius); xlabel('Learning steps'); ylabel('Radius'); title('Plot of radius and alpha decrease schedule');
+yyaxis right; plot(1:numIters, alpha); ylabel('alpha');
+
+%% plotting sum of embedding and topology
+totalError = embedding(1,:) +  topology(1,:)/(max(topology(1,:))/2);
+avTotalError = movmean(totalError,10);
+
+figure;
+subplot(2,1,1);
+plot(embedding(6,:), totalError); xlabel('Learning steps'); ylabel('Total error metric'); title('Plot of Total Error History')
+hold on; plot(embedding(6,:), avTotalError,'r');
+subplot(2,1,2);yyaxis left;
+plot(1:numIters, radius); xlabel('Learning steps'); ylabel('Radius'); title('Plot of radius and alpha decrease schedule');
+yyaxis right; plot(1:numIters, alpha); ylabel('alpha');
+
+end
