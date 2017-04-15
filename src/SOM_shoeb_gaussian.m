@@ -21,7 +21,7 @@ dimDataInput = size(dataInput,1); % gives the dimensionality of data space
 latticeCell = createInitLattice(dimDataInput,latticeSize); % weights initialization
 
 % Perform self organization
-[finalLattice, stepsToConv, embedding] = selfOrganize(latticeCell,dataInput,numIters,initRadius,alphaI,nEmbedEval);
+[finalLattice, stepsToConv, embedding,embeddingHamel] = selfOrganize(latticeCell,dataInput,numIters,initRadius,alphaI,nEmbedEval);
 
 % % giving the final weights of the lattice in Cell form
 % finalLatticeCell = mat2cell(finalLattice,ones(1,latticeSize(1)),ones(1,latticeSize(2)),2); finalLatticeCell = cellfun(@(x)reshape(x,2,1),finalLatticeCell,'un',0);
@@ -54,6 +54,8 @@ end
 figure;
 plot(embedding(6,:), embedding(1,:)); xlabel('Learning steps'); ylabel('Embedding metric'); title(['Plot of Embedding history'])
 
+plot(embeddingHamel); xlabel('Learning steps'); ylabel('Hamel Embedding metric'); title(['HAMEL: Plot of Embedding history'])
+
 %% plotting Mean and variance changes along with decrease schedules
 figure(3);
 subplot(2,2,1); plot(embedding(6,:), embedding([3,5],:)); xlabel('Learning steps'); ylabel('Embedding metric'); title('Plot of Variance embedding'); legend('VarianceData','VariancePrototype')
@@ -68,7 +70,7 @@ subplot(2,2,4); plot(1:numIters, alpha); xlabel('Learning steps'); ylabel('alpha
 end
 
 
-function [finalLattice, stepsToConv, embedding] = selfOrganize(latticeCell,dataInput,numIters,initRadius,alphaI,nEmbedEval)
+function [finalLattice, stepsToConv, embedding,embeddingHamel] = selfOrganize(latticeCell,dataInput,numIters,initRadius,alphaI,nEmbedEval)
 % the self organizing map steps here
 
 % convert the input lattice cell into a multi-dimensional Matrix
@@ -91,10 +93,14 @@ dum = 2;
 % [~, oldMapData, ~] = calcDensityLattice(lattice,dataInput,size(latticeCell)); % table of the prototype where each data point maps
 stepsToConv = numIters;
 embedding = ones(6,numIters/nEmbedEval);
+embeddingHamel = ones(1,numIters);
+
 
 for i = 1:numIters
     %     radius = initRadius; % can do decay here
 %     embedding(:,i) = calcEmbed(dataInput, lattice); embedding(6,i) = i;
+    embeddingHamel(i) = calcEmbedHamel(dataInput,lattice);
+    
     decayIters = 10000;
     radius = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
     alpha = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIters/2.5) + .125 * (i > decayIters/2.5 & i <= decayIters*.8)+ .025 * (i > decayIters*.8));
@@ -259,15 +265,16 @@ nProt = size(linearLattice,2);
 nData = size(dataInput,2);
 
 % Hamel formulas for 95% accuracy
-vleftLimit = (vData./vProt)/fpdf(0.05/2,nData/nProt);
-vrightLimit = (vData./vProt)*fpdf(0.05/2,nData/nProt);
+fy = finv(0.95/2,nData-1,nProt-1);
+vleftLimit = (vData./vProt)/fy;
+vrightLimit = (vData./vProt)*fy;
 vEmbed = vleftLimit<=1 & 1<=vrightLimit;
 
-mleftLimit = (mData-mProt) - 1.96*sqrt(vData.^2/nData + vProt.^2/nProt);
-mrightLimit = (mData-mProt) + 1.96*sqrt(vData.^2/nData + vProt.^2/nProt);
+mleftLimit = (mData-mProt) - 1.96*sqrt(vData/nData + vProt/nProt);
+mrightLimit = (mData-mProt) + 1.96*sqrt(vData/nData + vProt/nProt);
 mEmbed = mleftLimit<=1 & 1<=mrightLimit;
 
-fSignificance = vData / sum(VData);
+fSignificance = vData / sum(vData);
 
-embedding = mean(fSignificance*(vEmbed * mEmbed));
+embedding = mean(fSignificance.*(vEmbed .* mEmbed));
 end

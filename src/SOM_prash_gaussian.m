@@ -220,3 +220,28 @@ for j = 1:n
     end
 end
 end
+
+
+function embedding = calcEmbedHamel(dataInput, lattice)
+linearLattice = reshape(lattice,size(dataInput,1),[]);
+mData = mean(dataInput,2);
+vData = var(dataInput,0,2);
+mProt = mean(linearLattice,2);
+vProt = var(linearLattice,0,2);
+
+nProt = size(linearLattice,2);
+nData = size(dataInput,2);
+
+% Hamel formulas for 95% accuracy
+vleftLimit = (vData./vProt)/fpdf(0.05/2,nData/nProt);
+vrightLimit = (vData./vProt)*fpdf(0.05/2,nData/nProt);
+vEmbed = vleftLimit<=1 & 1<=vrightLimit;
+
+mleftLimit = (mData-mProt) - 1.96*sqrt(vData.^2/nData + vProt.^2/nProt);
+mrightLimit = (mData-mProt) + 1.96*sqrt(vData.^2/nData + vProt.^2/nProt);
+mEmbed = mleftLimit<=1 & 1<=mrightLimit;
+
+fSignificance = vData / sum(VData);
+
+embedding = mean(fSignificance*(vEmbed * mEmbed));
+end
