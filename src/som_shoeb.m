@@ -93,8 +93,8 @@ function [W,total_iter] = prob2a(fsuffix)
         'Problem2a, 2D Gaussian',strcat(this_function,'_',fsuffix));
     
     %% learn using som_learn
-    [W,total_iter] = som_learn(X, M, gaussian_neighborhood_function, ... 
-        learning_rate_schedule, N, som_stop_predicate, ...
+    [W,total_iter,ta,ea] = som_learn(X, M, gaussian_neighborhood_function, ... 
+        learning_rate_schedule, N, lattice, som_stop_predicate, ...
         som_logger, log_step);
  
     %% process learned network, plot figures etc
@@ -125,6 +125,16 @@ function [W,total_iter] = prob2a(fsuffix)
         hold off;
     end
 
+    figure;
+    plot(ta,'LineWidth',0.1); 
+    title('Topological accuracy'); xlabel('Learn step');
+    ylabel('topological accuracy');
+
+    figure;
+    plot(ea,'LineWidth',0.1); 
+    title('Embedding accuracy'); xlabel('Learn step');
+    ylabel('embedding accuracy');
+    
 %     fig = figure;
 %     fig = mesh2D_prototype_topology(fig,W,sprintf(['End of training, '...
 %         'total steps:%d'],total_iter),vw);
@@ -163,137 +173,6 @@ function [W,total_iter] = prob2a(fsuffix)
     display('Finished problem 2a');
 end
 
-%% Driver for problem 2b
-function [W,total_iter] = prob2b_and_3(fsuffix)
-%% HEADER
-%HW06, Problem 2b: 3D Gaussian and Problem 3 (plots).
-%Function to setup the experiments and run SOM learn.
-%INPUT
-%   fsuffix: character string: file name suffix.
-%RETURN
-%   W : matrix: whose columns represnt the prototypes. The column indices
-%       are equal to lattice node indices.
-%   total_iter : scalar: Number of learning steps when training stopped.
-%%  
-%   setup parameters
-    display('Starting problem 2b');
-    [ST,~] = dbstack;
-    this_function = ST.name;
-    
-    %generate data, pre-process data, setup parameeters
-    npoints        = 1000;
-    [X, D]         = generate_data_prob2b(npoints);
-    nx             = size(X,2); % data dimensions, #data points
-    lat_length     = 10;      % lattice length
-    lat_width      = 10;      % lattice width
-    M              = lat_length*lat_width;    % number of nodes in lattice.
-    N              = 5e1;     % maximum learning epochs.    
-    tol            = 1;       % classification error percentage tolerance.
-    log_events     = 4e2;     % total instants to log network parameters.
-    plotlog_step   = 1e1;     % plot logs after 10 calls to the logger.
-    log_step       = floor(N*nx/log_events);
-    mu_init        = 0.1;     % learning rate.
-    mu_final       = 0.01;    % min. learning rate.
-    rad_init       = floor(min([lat_length,lat_width])/2); % initial neighborhood.
-    rad_final      = 1;       % min. allowed radius.
-    T              = 4e3;     % 1 epoch time
-    mu_decay_fn    = make_hyperbolic_decay(2*T); %2 epochs time constant. 
-    rad_decay_fn   = make_hyperbolic_decay(2*T); %2 epochs time constant
-    lattice        = make_rect_lattice(lat_width);%square lattice.
-    learning_rate_schedule = make_schedule(mu_decay_fn, @(x)(x), ....
-        mu_init,mu_final);
-    radius_schedule = make_schedule(rad_decay_fn,@(x)(ceil(x-0.5)),...
-        rad_init,rad_final);
-    gaussian_neighborhood_function = ...
-        make_gaussian_neighborhood_function(lattice, ...
-        @(vi,vj)(sum(abs(vi-vj))), ...       
-        radius_schedule);
-    error_function = make_error_function();
-    som_stop_predicate = make_stop_predicate(error_function,tol);
-       
-    %% create filenames/open output reporting files, figures
-    ofile    = strcat(this_function,'out',fsuffix,'.txt');
-    outfile  = fopen(ofile,'wt');
-    fprintf('Performance characteristics will be printed in file: %s\n', ...
-        ofile);
-    fprintf(['Performance graphs will be plotted in files with ' ....
-        'suffices: %s\n'],fsuffix);
-    vw = [-60,40];
-    som_logger = make_logger(error_function,learning_rate_schedule, ...
-        radius_schedule,outfile,N,nx,tol,log_step,plotlog_step, ...
-        @(fig,W,tstr)(mesh3D_prototype_topology(fig,W,tstr,vw)),...
-        strcat(this_function,'_',fsuffix),'Problem2b, 3D Gaussian');
-    
-    %% learn using som_learn
-    [W,total_iter] = som_learn(X, M, gaussian_neighborhood_function, ... 
-        learning_rate_schedule, N, som_stop_predicate, ...
-        som_logger, log_step);
- 
-    %% process learned network, plot figures etc
-    function fig = mesh3D_prototype_topology(fig,W,tstr,vw)
-        xyz = reshape(W',lat_length,lat_width,3);
-        figure(fig);
-        hold on;
-        scatter3(X(1,:),X(2,:),X(3,:),0.5,'+','LineWidth',0.5,...
-            'MarkerEdgeColor',[0.502 0.502 0.502]);
-        mesh(xyz(:,:,1),xyz(:,:,2),xyz(:,:,3),'LineStyle','-', ... 
-            'LineWidth',2,'EdgeColor','black','Marker','o', ...
-            'MarkerSize',3,'MarkerFaceColor','r','MarkerEdgeColor','r',...
-            'FaceColor','none');
-        grid on;
-        view(vw);        
-        title(tstr);
-        hold off;  
-    end
-
-    function fig = scatter3D_data_points(fig,X,D,tstr,vw)
-        figure(fig);
-        hold on;
-        colmap = [0 0.251 0;0.251 0 0.502; 1 0.502 0.502; 0.502 0 0];
-        colormap(colmap);
-        scatter3(X(1,:),X(2,:),X(3,:),4,D-1,'+','LineWidth',1);
-        view(vw)
-        title(tstr);
-        hold off;
-    end
-
-    fig = figure;
-    fig = mesh3D_prototype_topology(fig,W,sprintf(['End of training, '...
-        'total steps:%d'],total_iter),vw);
-    fig = scatter3D_data_points(fig,X,D,sprintf(['End of training, '...
-        'total steps:%d'],total_iter),vw);
-    saveas(gcf,sprintf('%sfig%d_after_training_data_plot_%s.fig',...
-        this_function,fig,fsuffix));
-
-    fig = figure;
-    whitebg('black');
-    tstr = 'Problem 2b, Fence and weights after training';
-    fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr);
-    fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1]);
-    saveas(gcf,sprintf(['%sfig%d_after_training_mU_matrix_and_weights_'...
-        '%s.fig'],this_function,fig,fsuffix));
-
-    fig = figure;
-    tstr = 'Problem 2b, Class color and weights';
-    colmapcell = {[0 0 0],[0 0.251 0],[0.251 0 0.502],[1 0.502 0.502],...
-        [0.502 0 0]};
-    fig = decorate_class_color(fig,lattice,W,X,D,colmapcell,tstr,0.1);
-    fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1]);
-    saveas(gcf,sprintf(['%sfig%d_after_training_classfication_'....
-        'colors_and_weights_%s.fig'],this_function,fig,fsuffix));
-
-    fig = figure;
-    tstr = 'Problem 2b, Fence, class color map, and weights';
-    fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr);
-    fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1]);
-    fig = decorate_class_color(fig,lattice,W,X,D,colmapcell,tstr,5);
-    saveas(gcf,sprintf('%sfig%d_after_training_all_overlaid_', ...
-        this_function,fig,fsuffix));
-
-    whitebg('white');
-    fprintf('Total learning steps: %d\n',total_iter);    
-    display('Finished problem 2b');
-end
 
 %% Driver for problem 4
 function [W,total_iter] = prob4(fsuffix)
@@ -401,7 +280,7 @@ function [W,total_iter] = prob4(fsuffix)
 end
 
 %% som_learn function
-function [W,iter] = som_learn(X,M,h,eta,N,stop_predicate,som_logger, ...
+function [W,iter,ta,ea] = som_learn(X,M,h,eta,N,lattice,stop_predicate,som_logger, ...
     log_step)
 %% HEADER
 %Run Kohonen SOM learning algorithm.
@@ -451,13 +330,19 @@ function [W,iter] = som_learn(X,M,h,eta,N,stop_predicate,som_logger, ...
     [mx,nx] = size(X);            % its better if pre-processing type is 
     X_mean = mean(X,2);           % also a parameter for som_learn.
     X_scale= max(abs(X(:)));
-    X      = bsxfun(@minus, X,X_mean);
-    X      = bsxfun(@rdivide, X,X_scale);% X is now normalized input
-    W = 2*rand(mx,M,'double')-1;         % initialialize weights.
+    X      = (X - repmat(X_mean,1,nx))/X_scale; % X is now normalized input
+    W = (max(X(:))-min(X(:)))*rand(mx,M,'double')+min(X(:));% initialialize weights.
     h('reset');                          % initialize neighborhood function
     mu=eta('reset');                     % initialize learning rate.    
     iter = 0;                            % total iterations counter.
+%     ta = zeros(1,N*nx);                  % embedding accuracy    
+    ta_step = 10;
+    s = nx/10;
     
+    meanX = mean(X,2);
+    varX  = var(X,0,2);
+    sigX  = varX / sum(varX);            % feature significance
+
     for epoch = 1:N     % repeat and learn until convergence or max. steps.                
         for p = randperm(nx)
             % bokekeeping (call logger)
@@ -466,16 +351,16 @@ function [W,iter] = som_learn(X,M,h,eta,N,stop_predicate,som_logger, ...
                 W_denormalized = bsxfun(@plus,W_denormalized,X_mean);
                 som_logger(iter,W_denormalized);      
             end
-            i = (epoch-1)*N + p;
-radius = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
-alpha = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIters/2.5) + .125 * (i > decayIters/2.5 & i <= decayIters*.8)+ .025 * (i > decayIters*.8));
+%             i = (epoch-1)*N + p;
+% radius = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
+% alpha = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIters/2.5) + .125 * (i > decayIters/2.5 & i <= decayIters*.8)+ .025 * (i > decayIters*.8));
             %1. stop learning if true.
             if(stop_predicate(W))
                 return;
             end
             
             %2. find best match
-            Q = bsxfun(@(x,w)((x-w).^2),W,X(:,p));  % Euclidean distance
+            Q = (W - repmat(X(:,p),1,M)).^2;      % Euclidean distance
             [~,c] = min(sum(Q,1));
             
             %3. update weights.
@@ -486,12 +371,39 @@ alpha = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIte
             %4. next iteration, learning rate and neighborhood function.
             mu = eta('next');
             h('next');
-            iter = iter+1;        
+            iter = iter+1;
+            
+            if(mod(iter,ta_step)==0)
+                topo = 0;
+                for ii = randsample(1:nx,s)
+                    q = sum((W - repmat(X(:,ii),1,M)).^2,1);
+                    [~,c1] = min(q);
+                    q(c1) = inf;
+                    [~,c2] = min(q);
+                    topo = topo + (norm(lattice(c1) - lattice(c2))<2);
+                end
+                ta(floor(iter/ta_step)+1) = topo/s;
+                
+                % Embedding metric, Hamel formulas for 95% accuracy
+                meanW = mean(W,2);
+                varW = var(W,0,2);
+
+                fy = finv(0.95,nx-1,M-1);
+                vleftLimit = (varX./varW)/fy;
+                vrightLimit = (varX./varW)*fy;
+                vEmbed = vleftLimit<=1 & 1<=vrightLimit;
+
+%                     mleftLimit = (meanX-meanW) - 1.96*sqrt(varX/nx + varW/M);
+%                     mrightLimit = (meanX-meanW) + 1.96*sqrt(varX/nx + varW/M);
+%                     mEmbed = mleftLimit<=0 & 0<=mrightLimit;
+
+                ea(floor(iter/ta_step)+1) = mean(sigX.*(vEmbed));                                
+            end
+            
         end
     end
 
-    W = bsxfun(@times,W,X_scale); 
-    W = bsxfun(@plus,W,X_mean);
+    W = W*X_scale + repmat(X_mean,1,M);
 end
 
 %% mU matrix
