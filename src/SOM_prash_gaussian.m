@@ -7,10 +7,10 @@ function SOM2
 % used as a multi-dimensional matrix
 
 latticeSize = [8 8];
-initRadius = max(latticeSize); % Initial radius of influence
+initRadius = max(latticeSize)/2; % Initial radius of influence
 
 numIters = 24000; % number of learning steps
-alphaI = .8; % learning rate
+alphaI = .4; % learning rate
 
 nEmbedEval = 50;
 tolerance = .1;
@@ -80,19 +80,21 @@ progress = 1;
 for i = 1:numIters
     %     radius = initRadius; % can do decay here
     %     embedding(:,i) = calcEmbed(dataInput, lattice); embedding(6,i) = i;
+    %% Hard coded scheduling of radius and learning rate
 %     decayIters = 10000;
-
+%     radius = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
+%     alpha = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIters/2.5) + .125 * (i > decayIters/2.5 & i <= decayIters*.8)+ .025 * (i > decayIters*.8));
+%     
+%     radiusVec(i) = radius; alphaVec(i) = alpha; 
     %% dynamic scheduling of radius and learning rate
     if ~mod(i/(nEmbedEval * 10),checkLength)     
-        if totalError(1,indexEmbedAvg) >= mean(totalError(1,indexEmbedAvg-checkLength + 1:indexEmbedAvg))
+        if totalError(1,indexEmbedAvg) >= .9 * mean(totalError(1,indexEmbedAvg-checkLength + 1:indexEmbedAvg))
             progress = min(progress + 1,5);
         end        
     end
         radiusVec(i) = radiusSteps(progress); radius = radiusVec(i);
         alphaVec(i) = alphaSteps(progress); alpha = alphaVec(i);
-%     radius = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
-%     alpha = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIters/2.5) + .125 * (i > decayIters/2.5 & i <= decayIters*.8)+ .025 * (i > decayIters*.8));
-%     
+  
     %% pick an x (data point) randomly
     x = dataInput(:,randi(size(dataInput,2)));
     
@@ -296,32 +298,32 @@ end
 function plotErrorStuff(embedding,topology,avgEmbedding,avgTopology, totalError, avTotalError,radius,alpha,stepsToConv)
 
 %% plotting Mean and variance changes along with decrease schedules
-figure(3);
-subplot(2,2,1); plot(embedding(6,:), embedding([3,5],:)); xlabel('Learning steps'); ylabel('Embedding metric'); title('Plot of Variance embedding'); legend('VarianceData','VariancePrototype')
-subplot(2,2,2); plot(embedding(6,:), embedding([2,4],:)); xlabel('Learning steps'); ylabel('Embedding metric'); title('Plot of Mean embedding'); legend('meanData','meanPrototype')
-decayIters = 10000;
-% radius = zeros(1,numIters); alpha = radius;
-% for i = 1:numIters
-%     radius(i) = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
-%     alpha(i) = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIters/2.5) + .125 * (i > decayIters/2.5 & i <= decayIters*.8)+ .025 * (i > decayIters*.8));
-% end
-subplot(2,2,3); plot(1:stepsToConv, radius); xlabel('Learning steps'); ylabel('Radius'); title('Plot of radius decrease schedule');
-subplot(2,2,4); plot(1:stepsToConv, alpha); xlabel('Learning steps'); ylabel('alpha'); title('Plot of alpha decrease schedule');
-
-%% plotting embedding and topology history
-% avEmbed = movmean(embedding(1,:),10);
-% avTopo = movmean(topology(1,:),10); 
-
-figure;
-subplot(3,1,1);
-plot(embedding(6,:), embedding(1,:)); xlabel('Learning steps'); ylabel('Embedding error metric'); title('Plot of Embedding History')
-hold on; plot(avgEmbedding(2,:), avgEmbedding(1,:),'r');
-subplot(3,1,2);
-plot(embedding(6,:), topology(1,:)); xlabel('Learning steps'); ylabel('Topology error metric'); title('Plot of Topology History')
-hold on; plot(avgEmbedding(2,:), avgTopology,'r');
-subplot(3,1,3);
-plot(1:stepsToConv, radius); xlabel('Learning steps'); ylabel('Radius'); title('Plot of radius and alpha decrease schedule');
-hold on; plot(1:stepsToConv, 10 * alpha); legend('Neighbourhood Radius','Learning rate x 10');
+% figure(3);
+% subplot(2,2,1); plot(embedding(6,:), embedding([3,5],:)); xlabel('Learning steps'); ylabel('Embedding metric'); title('Plot of Variance embedding'); legend('VarianceData','VariancePrototype')
+% subplot(2,2,2); plot(embedding(6,:), embedding([2,4],:)); xlabel('Learning steps'); ylabel('Embedding metric'); title('Plot of Mean embedding'); legend('meanData','meanPrototype')
+% decayIters = 10000;
+% % radius = zeros(1,numIters); alpha = radius;
+% % for i = 1:numIters
+% %     radius(i) = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
+% %     alpha(i) = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIters/2.5) + .125 * (i > decayIters/2.5 & i <= decayIters*.8)+ .025 * (i > decayIters*.8));
+% % end
+% subplot(2,2,3); plot(1:stepsToConv, radius); xlabel('Learning steps'); ylabel('Radius'); title('Plot of radius decrease schedule');
+% subplot(2,2,4); plot(1:stepsToConv, alpha); xlabel('Learning steps'); ylabel('alpha'); title('Plot of alpha decrease schedule');
+% 
+% %% plotting embedding and topology history
+% % avEmbed = movmean(embedding(1,:),10);
+% % avTopo = movmean(topology(1,:),10); 
+% 
+% figure;
+% subplot(3,1,1);
+% plot(embedding(6,:), embedding(1,:)); xlabel('Learning steps'); ylabel('Embedding error metric'); title('Plot of Embedding History')
+% hold on; plot(avgEmbedding(2,:), avgEmbedding(1,:),'r');
+% subplot(3,1,2);
+% plot(embedding(6,:), topology(1,:)); xlabel('Learning steps'); ylabel('Topology error metric'); title('Plot of Topology History')
+% hold on; plot(avgEmbedding(2,:), avgTopology,'r');
+% subplot(3,1,3);
+% plot(1:stepsToConv, radius); xlabel('Learning steps'); ylabel('Radius'); title('Plot of radius and alpha decrease schedule');
+% hold on; plot(1:stepsToConv, 10 * alpha); legend('Neighbourhood Radius','Learning rate x 10');
 
 %% plotting sum of embedding and topology
 
