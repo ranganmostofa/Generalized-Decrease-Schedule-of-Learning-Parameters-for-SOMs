@@ -9,10 +9,11 @@ function SOM2
 latticeSize = [8 8];
 initRadius = max(latticeSize); % Initial radius of influence
 
-numIters = 20000; % number of learning steps
-alphaI = .8; % learning rate
+numIters = 24000; % number of learning steps
+alphaI = .4; % learning rate
 
-nEmbedEval = 100;
+nEmbedEval = 50;
+tolerance = .1;
 
 % Input data entry
 dataInput = [createGaussians([2 1000],.1,[7 7]), createGaussians([2 1000],.1,[0 7]), createGaussians([2 1000],.1,[7 0]), createGaussians([2 1000],.1,[0 0]),]; % each COLUMN is a data vector
@@ -22,7 +23,7 @@ dimDataInput = size(dataInput,1); % gives the dimensionality of data space
 lattice = createInitLattice(dimDataInput,latticeSize, mean(dataInput,2), std(dataInput,0,2)); % weights initialization
 
 % Perform self organization
-[finalLattice, stepsToConv, embedding, topology, avgEmbedding, avgTopology, totalError, avTotalError] = selfOrganize(lattice,dataInput,dI,numIters,initRadius,alphaI,nEmbedEval);
+[finalLattice, stepsToConv, embedding, topology, avgEmbedding, avgTopology, totalError, avTotalError] = selfOrganize(lattice,dataInput,dI,numIters,initRadius,alphaI,nEmbedEval,tolerance);
 
 % % giving the final weights of the lattice in Cell form
 % finalLatticeCell = mat2cell(finalLattice,ones(1,latticeSize(1)),ones(1,latticeSize(2)),2); finalLatticeCell = cellfun(@(x)reshape(x,2,1),finalLatticeCell,'un',0);
@@ -51,7 +52,7 @@ plotErrorStuff(embedding,topology, avgEmbedding, avgTopology, totalError, avTota
 end
 
 
-function [finalLattice, stepsToConv, embedding, topology, avgEmbedding, avgTopology, totalError, avTotalError] = selfOrganize(lattice,dataInput,dI,numIters,initRadius,alphaI,nEmbedEval)
+function [finalLattice, stepsToConv, embedding, topology, avgEmbedding, avgTopology, totalError, avTotalError] = selfOrganize(lattice,dataInput,dI,numIters,initRadius,alphaI,nEmbedEval,tolerance)
 % the self organizing map steps here
 
 r = (1:size(lattice,1))';c = 1:size(lattice,2);
@@ -63,8 +64,8 @@ dum = 2;
 
 % [~, oldMapData, ~] = calcDensityLattice(lattice,dataInput,size(latticeCell)); % table of the prototype where each data point maps
 stepsToConv = numIters;
-embedding = ones(6,numIters/nEmbedEval); topology = zeros(1,numIters/nEmbedEval); totalError = topology;
-avgEmbedding = ones(2,numIters/(nEmbedEval * 10)); avgTopology =  zeros(1,numIters/(nEmbedEval * 10)); avTotalError = avgTopology;
+embedding = ones(6,numIters/nEmbedEval); topology = ones(1,numIters/nEmbedEval); totalError = topology;
+avgEmbedding = ones(2,numIters/(nEmbedEval * 10)); avgTopology =  ones(1,numIters/(nEmbedEval * 10)); avTotalError = avgTopology; indexEmbedAvg = 1;
 
 for i = 1:numIters
     %     radius = initRadius; % can do decay here
@@ -90,7 +91,7 @@ for i = 1:numIters
     % update the weights - Learning rule
     lattice = lattice + alpha * repmat(neighbourhoodFn,[1,1,size(differenceMatrix,3)]) .* differenceMatrix;
     
-    % Calculate embedding every 100 steps
+    % Calculate embedding every nEmbedEval (~100) steps
     if mod(i,nEmbedEval) == 0
         indexEmbed = i/nEmbedEval;
         embedding(1:5,indexEmbed) = calcEmbed(dataInput, lattice); embedding(6,indexEmbed) = i;
@@ -98,23 +99,26 @@ for i = 1:numIters
         totalError(1,indexEmbed) = (embedding(1,indexEmbed) + topology(1,indexEmbed))/2;
     end
     
-    % Averaging embedding every 1000 steps
+    % Averaging embedding every 10 data points (~1000 steps)
     if mod(i,nEmbedEval * 10) == 0
         indexEmbedAvg = i/(nEmbedEval * 10) + 1;
         avgEmbedding(1,indexEmbedAvg) = mean(embedding(1,indexEmbed - 9:indexEmbed)); avgEmbedding(2,indexEmbedAvg) = i;
         avgTopology(1,indexEmbedAvg)  = mean(topology(1,indexEmbed - 9:indexEmbed));  
-        avTotalError(1,indexEmbedAvg) = (avgEmbedding(1,indexEmbedAvg) + avgTopology(1,indexEmbedAvg))/2;
+        avTotalError(1,indexEmbedAvg) = (avgEmbedding(1,indexEmbedAvg) + avgTopology(1,indexEmbedAvg))/2; 
     end
     
     % making plots at particular learning steps as defined in the vector
-    if sum(i == [decayIters/10 decayIters/2 decayIters])
-%      if ~mod(i,1000)   
+%     if sum(i == [decayIters/10 decayIters/2 decayIters])
+     if ~mod(i,1000)   
         % Plot the mapping and input data
         plotMappings(dI,lattice,i,dum)
         dum = dum + 1;
     end
     
-    if stepsToConv < numIters
+    if avTotalError(1,indexEmbedAvg) < tolerance        
+        embedding = embedding(:,totalError < 1); topology = topology(:,totalError < 1); totalError = totalError(totalError < 1);
+        avgEmbedding = avgEmbedding(:,avTotalError < 1); avgTopology = avgTopology(:,avTotalError < 1); avTotalError = avTotalError(avTotalError < 1);
+        stepsToConv = i;
         break
     end
     
@@ -229,16 +233,33 @@ for j = 1:n
 end
 end
 
-function plotMappings(dI,lattice,i,dum)
+% function plotMappings(dI,lattice,i,dum)
+% % Plot the mapping and input data in one subplot
+% figure(1); subplot(2,2,dum);
+% hold on;
+% plot(dI(:,1,1),dI(:,1,2),'r.');  plot(dI(:,2,1),dI(:,2,2),'m.');  plot(dI(:,3,1),dI(:,3,2),'g.');  plot(dI(:,4,1),dI(:,4,2),'y.');
+% plot(lattice(:,:,1),lattice(:,:,2),'ko','MarkerFaceColor','k','MarkerSize',4);
+% plot(lattice(:,:,1),lattice(:,:,2),'b-'); plot(lattice(:,:,1)',lattice(:,:,2)','b-');
+% xlabel('First data dimension'); ylabel('Second data dimension'); title(['',num2str(i),' Learning Steps'])
+% % legend('Input data1','Input data2','Input data3','Input data4','Prototype vectors')
+% 
+% end
+
+function plotMappings(dI,lattice,iter,dum)
 % Plot the mapping and input data in one subplot
-figure(1); subplot(2,2,dum);
+figure(1); 
+r = 5; c = 5; 
+i = ceil(dum/c); j = mod(dum - 1,c); % i = y axis (row) ; j = x axis (column)
+% subplot(2,2,dum);
+ax = axes('position',[(j)/c (r-i)/r 1/r 1/c]);
 hold on;
 plot(dI(:,1,1),dI(:,1,2),'r.');  plot(dI(:,2,1),dI(:,2,2),'m.');  plot(dI(:,3,1),dI(:,3,2),'g.');  plot(dI(:,4,1),dI(:,4,2),'y.');
 plot(lattice(:,:,1),lattice(:,:,2),'ko','MarkerFaceColor','k','MarkerSize',4);
 plot(lattice(:,:,1),lattice(:,:,2),'b-'); plot(lattice(:,:,1)',lattice(:,:,2)','b-');
-xlabel('First data dimension'); ylabel('Second data dimension'); title(['',num2str(i),' Learning Steps'])
+legend(num2str(iter))
+% xlabel('First data dimension'); ylabel('Second data dimension'); title(['',num2str(iter),' Learning Steps'])
 % legend('Input data1','Input data2','Input data3','Input data4','Prototype vectors')
-
+set(ax,'YTickLabel',[]);set(ax,'XTickLabel',[]); set(ax,'Box','on')
 end
 
 
