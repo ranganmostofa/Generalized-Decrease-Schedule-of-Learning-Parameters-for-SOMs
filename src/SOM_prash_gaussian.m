@@ -7,10 +7,10 @@ function SOM2
 % used as a multi-dimensional matrix
 
 latticeSize = [8 8];
-initRadius = max(latticeSize); % Initial radius of influence
+initRadius = max(latticeSize)/2; % Initial radius of influence
 
 numIters = 24000; % number of learning steps
-alphaI = .8; % learning rate
+alphaI = .4; % learning rate
 
 nEmbedEval = 50;
 tolerance = .1;
@@ -68,7 +68,7 @@ plotMappings(dI,lattice,1,1)
 dum = 2;
 
 radiusSteps = initRadius:-(initRadius-1)/4:1;
-alphaSteps = alphaI:-(alphaI - .05)/4 :.05;
+alphaSteps = alphaI:-(alphaI - .01)/4 :.01;
 
 % [~, oldMapData, ~] = calcDensityLattice(lattice,dataInput,size(latticeCell)); % table of the prototype where each data point maps
 stepsToConv = numIters;
@@ -84,7 +84,7 @@ for i = 1:numIters
 
     %% dynamic scheduling of radius and learning rate
     if ~mod(i/(nEmbedEval * 10),checkLength)     
-        if totalError(1,indexEmbedAvg) >= mean(totalError(1,indexEmbedAvg-checkLength + 1:indexEmbedAvg))
+        if abs(1-totalError(1,indexEmbedAvg)/mean(totalError(1,indexEmbedAvg-checkLength + 1:indexEmbedAvg))) <= 0.1
             progress = min(progress + 1,5);
         end        
     end
