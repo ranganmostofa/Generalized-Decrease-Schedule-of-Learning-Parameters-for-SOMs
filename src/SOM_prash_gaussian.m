@@ -54,7 +54,7 @@ end
 
 function [finalLattice, stepsToConv, embedding, topology, avgEmbedding, avgTopology, totalError, avTotalError, radiusVec, alphaVec] = selfOrganize(lattice,dataInput,dI,numIters,initRadius,alphaI,nEmbedEval,tolerance)
 % the self organizing map steps here
-checkLength = 10;
+checkLength = 5;
 
 r = (1:size(lattice,1))';c = 1:size(lattice,2);
 latticeIndices(:,:,1) = r(:,ones(1,size(lattice,2))); latticeIndices(:,:,2) = c(ones(1,size(lattice,1)),:);  % latticeIndices : holds the i,j indices of the 2d lattice space
