@@ -12,8 +12,8 @@ initRadius = max(latticeSize)/2; % Initial radius of influence
 numIters = 24000; % number of learning steps
 alphaI = .4; % learning rate
 
-nEmbedEval = 50;
-tolerance = .1;
+nEmbedEval = 50; % Evaluating the embedding and topology every nEmbedEval number of learning steps
+tolerance = .1;  % Convergence criteria for total error
 
 % Input data entry
 dataInput = [createGaussians([2 1000],.1,[7 7]), createGaussians([2 1000],.1,[0 7]), createGaussians([2 1000],.1,[7 0]), createGaussians([2 1000],.1,[0 0]),]; % each COLUMN is a data vector
@@ -54,7 +54,7 @@ end
 
 function [finalLattice, stepsToConv, embedding, topology, avgEmbedding, avgTopology, totalError, avTotalError, radiusVec, alphaVec] = selfOrganize(lattice,dataInput,dI,numIters,initRadius,alphaI,nEmbedEval,tolerance)
 % the self organizing map steps here
-checkLength = 10;
+checkLength = 5;
 
 r = (1:size(lattice,1))';c = 1:size(lattice,2);
 latticeIndices(:,:,1) = r(:,ones(1,size(lattice,2))); latticeIndices(:,:,2) = c(ones(1,size(lattice,1)),:);  % latticeIndices : holds the i,j indices of the 2d lattice space
