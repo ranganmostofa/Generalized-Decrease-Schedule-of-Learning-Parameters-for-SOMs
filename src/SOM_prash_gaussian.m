@@ -47,7 +47,7 @@ end
 % plotHistoChart(histoData);
 
 %% plot other things related to embedding
-plotErrorStuff(embedding,topology, avgEmbedding, avgTopology, totalError, avTotalError, radius,alpha,numIters)
+plotErrorStuff(embedding,topology, avgEmbedding, avgTopology, totalError, avTotalError, radius,alpha,stepsToConv)
 
 end
 
@@ -59,9 +59,9 @@ checkLength = 10;
 r = (1:size(lattice,1))';c = 1:size(lattice,2);
 latticeIndices(:,:,1) = r(:,ones(1,size(lattice,2))); latticeIndices(:,:,2) = c(ones(1,size(lattice,1)),:);  % latticeIndices : holds the i,j indices of the 2d lattice space
 
-% Initial parameters
-radius = initRadius;
-alpha = alphaI;
+% % Initial parameters
+% radius = initRadius;
+% alpha = alphaI;
 
 % plotting initial weights
 plotMappings(dI,lattice,1,1)
@@ -83,7 +83,7 @@ for i = 1:numIters
 %     decayIters = 10000;
 
     %% dynamic scheduling of radius and learning rate
-    if ~mod(indexEmbedAvg,checkLength)     
+    if ~mod(i/(nEmbedEval * 10),checkLength)     
         if totalError(1,indexEmbedAvg) >= mean(totalError(1,indexEmbedAvg-checkLength + 1:indexEmbedAvg))
             progress = min(progress + 1,5);
         end        
@@ -137,7 +137,7 @@ for i = 1:numIters
     if avTotalError(1,indexEmbedAvg) < tolerance        
         embedding = embedding(:,totalError < 1); topology = topology(:,totalError < 1); totalError = totalError(totalError < 1);
         avgEmbedding = avgEmbedding(:,avTotalError < 1); avgTopology = avgTopology(:,avTotalError < 1); avTotalError = avTotalError(avTotalError < 1);
-        radius = radius(radius > 0); alpha = alpha(alpha > 0);
+        radiusVec = radiusVec(radiusVec > 0); alphaVec = alphaVec(alphaVec > 0);
         stepsToConv = i;
         break
     end
@@ -293,7 +293,7 @@ xlabel('First data dimension'); ylabel('Second data dimension'); title(['Plot of
 legend('Input data1','Input data2','Input data3','Input data4','Prototype vectors')
 end
 
-function plotErrorStuff(embedding,topology,avgEmbedding,avgTopology, totalError, avTotalError,radius,alpha,numIters)
+function plotErrorStuff(embedding,topology,avgEmbedding,avgTopology, totalError, avTotalError,radius,alpha,stepsToConv)
 
 %% plotting Mean and variance changes along with decrease schedules
 figure(3);
@@ -305,8 +305,8 @@ decayIters = 10000;
 %     radius(i) = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
 %     alpha(i) = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIters/2.5) + .125 * (i > decayIters/2.5 & i <= decayIters*.8)+ .025 * (i > decayIters*.8));
 % end
-subplot(2,2,3); plot(1:numIters, radius); xlabel('Learning steps'); ylabel('Radius'); title('Plot of radius decrease schedule');
-subplot(2,2,4); plot(1:numIters, alpha); xlabel('Learning steps'); ylabel('alpha'); title('Plot of alpha decrease schedule');
+subplot(2,2,3); plot(1:stepsToConv, radius); xlabel('Learning steps'); ylabel('Radius'); title('Plot of radius decrease schedule');
+subplot(2,2,4); plot(1:stepsToConv, alpha); xlabel('Learning steps'); ylabel('alpha'); title('Plot of alpha decrease schedule');
 
 %% plotting embedding and topology history
 % avEmbed = movmean(embedding(1,:),10);
@@ -320,8 +320,8 @@ subplot(3,1,2);
 plot(embedding(6,:), topology(1,:)); xlabel('Learning steps'); ylabel('Topology error metric'); title('Plot of Topology History')
 hold on; plot(avgEmbedding(2,:), avgTopology,'r');
 subplot(3,1,3);
-plot(1:numIters, radius); xlabel('Learning steps'); ylabel('Radius'); title('Plot of radius and alpha decrease schedule');
-hold on; plot(1:numIters, 10 * alpha); legend('Neighbourhood Radius','Learning rate x 10');
+plot(1:stepsToConv, radius); xlabel('Learning steps'); ylabel('Radius'); title('Plot of radius and alpha decrease schedule');
+hold on; plot(1:stepsToConv, 10 * alpha); legend('Neighbourhood Radius','Learning rate x 10');
 
 %% plotting sum of embedding and topology
 
@@ -330,7 +330,7 @@ subplot(2,1,1);
 plot(embedding(6,:), totalError); xlabel('Learning steps'); ylabel('Total error metric'); title('Plot of Total Error History')
 hold on; plot(avgEmbedding(2,:), avTotalError,'r');
 subplot(2,1,2);
-plot(1:numIters, radius); xlabel('Learning steps'); ylabel('Radius'); title('Plot of radius and alpha decrease schedule');
-hold on; plot(1:numIters, 10 * alpha); legend('Neighbourhood Radius','Learning rate x 10');
+plot(1:stepsToConv, radius); xlabel('Learning steps'); ylabel('Radius'); title('Plot of radius and alpha decrease schedule');
+hold on; plot(1:stepsToConv, 10 * alpha); legend('Neighbourhood Radius','Learning rate x 10');
 
 end
