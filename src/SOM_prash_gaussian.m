@@ -88,7 +88,7 @@ for i = 1:numIters
 %     radiusVec(i) = radius; alphaVec(i) = alpha; 
     %% dynamic scheduling of radius and learning rate
     if ~mod(i/(nEmbedEval * 10),checkLength)     
-        if totalError(1,indexEmbedAvg) >= .9 * mean(totalError(1,indexEmbedAvg-checkLength + 1:indexEmbedAvg))
+        if totalError(1,indexEmbedAvg) >= .9 * mean(totalError(1,indexEmbedAvg-checkLength + 1:indexEmbedAvg - 1))
             progress = min(progress + 1,5);
         end        
     end
