@@ -16,7 +16,7 @@ nEmbedEval = 50; % Evaluating the embedding and topology every nEmbedEval number
 tolerance = .1;  % Convergence criteria for total error
 
 % Input data entry
-dataInput = [createGaussians([2 1000],.1,[7 7]), createGaussians([2 1000],.1,[0 7]), createGaussians([2 1000],.1,[7 0]), createGaussians([2 1000],.1,[0 0]),]; % each COLUMN is a data vector
+dataInput = [createGaussians([2 1000],[.1 .1],[7 7]), createGaussians([2 1000],[.1 .1],[0 7]), createGaussians([2 1000],[.1 .1],[7 0]), createGaussians([2 1000],[.1 .1],[0 0]),]; % each COLUMN is a data vector
 dI = reshape(dataInput',[],4,2); % resheped to give data classes in columns, and data co-ordinates in 3rd dimension
 
 dimDataInput = size(dataInput,1); % gives the dimensionality of data space
@@ -233,18 +233,19 @@ lattice = rand([latticeSize dimDataInput]) .* sdMatrix + meanMatrix;
 end
 
 
-function x1 = createGaussians(dim,var,mean)
+function x1 = createGaussians(dim,var,means)
 % creates a normal random vector with dim dimension. mean of first 2
 % dimensions set by [mean1 mean2]
-x1 = sqrt(var)*randn(dim(1),dim(2));
+x1 = repmat(sqrt(var)',[1,dim(2)]).* randn(dim(1),dim(2)) + repmat(means',[1,dim(2)]);
 % x1=detrend(x1);
-x1(1,:) = x1(1,:) + repmat(mean(1),[1,size(x1,2)]);
-x1(2,:) = x1(2,:) + repmat(mean(2),[1,size(x1,2)]);
+% x1(1,:) = x1(1,:) + repmat(means(1),[1,size(x1,2)]);
+% x1(2,:) = x1(2,:) + repmat(means(2),[1,size(x1,2)]);
 end
 
 
 function embedding = calcEmbed(dataInput, lattice)
-linearLattice = reshape(lattice,size(dataInput,1),[]);
+numWeights = size(lattice,1) * size(lattice,2);
+linearLattice = reshape(lattice,numWeights,[])';
 mData = mean(dataInput,2);
 vData = var(dataInput,0,2);
 mProt = mean(linearLattice,2);
