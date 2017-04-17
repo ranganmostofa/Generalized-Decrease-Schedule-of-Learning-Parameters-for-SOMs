@@ -14,7 +14,7 @@ function som_shoeb
     fsuffix  = sprintf(repmat('_%d', 1, size(osuffix, 2)),osuffix );
     
     %run and collect results for problem2a
-    prob2a(fsuffix);
+%     prob2a(fsuffix);
 %     pause(2);
 %     close all;
 %    
@@ -24,9 +24,9 @@ function som_shoeb
 %     close all;
 % 
 %     %run and collect results for problem4
-%     prob4(fsuffix); 
-%     display('Finished running all problems and saved figures/log reports.');
-%     pause(2);
+    prob4(fsuffix); 
+    display('Finished running all problems and saved figures/log reports.');
+    pause(2);
     fclose('all');
 
 end
@@ -357,17 +357,17 @@ function [W,total_iter] = prob4(fsuffix)
         fig = figure(fig);
         whitebg('black');
         class_color = {[0 0 0], [0 0 0], [0 0 0], [0 0 0]};
-        fig = decorate_class_color(fig,lattice,W,X,D,class_color,tstr,5);
-        fig = decorate_class_label(fig,lattice,W,X,D,label_text,...
-            label_color,5,tstr);
-        fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr);
+        fig = decorate_class_color(fig,lattice,W,X,D,class_color,tstr,2);
         fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1]);
+        fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr,2);
+        fig = decorate_class_label(fig,lattice,W,X,D,label_text,...
+            label_color,4,tstr);
     end
-
+    
     som_logger = make_logger(error_function,learning_rate_schedule,...
-        radius_schedule,outfile,N,nx,tol,log_step,plotlog_step,...
-        @diag_plot,...
-        strcat(this_function,'_',fsuffix),'Problem4, iris dataset');
+        radius_schedule,outfile,N,nx,tol,plotlog_step,...
+        @diag_plot,'Problem4, iris dataset',...
+        strcat(this_function,'_',fsuffix));
     
     %% learn using som_learn
     [W,total_iter] = som_learn(X, M, gaussian_neighborhood_function, ... 
@@ -378,10 +378,10 @@ function [W,total_iter] = prob4(fsuffix)
     fig = figure;
     whitebg('black');
     tstr = 'Problem 4, Fence, weights and labels after training';
-    fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr);
     fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1]);
+    fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr,2);
     fig = decorate_class_label(fig,lattice,W,X,D,label_text,...
-            label_color,5,tstr);
+            label_color,4,tstr);
     saveas(gcf,sprintf(['%sfig%d_after_training_mU_matrix_and_weights_'...
         '%s.fig'],this_function,fig,fsuffix));
 
@@ -466,9 +466,9 @@ function [W,iter] = som_learn(X,M,h,eta,N,stop_predicate,som_logger, ...
                 W_denormalized = bsxfun(@plus,W_denormalized,X_mean);
                 som_logger(iter,W_denormalized);      
             end
-            i = (epoch-1)*N + p;
-radius = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
-alpha = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIters/2.5) + .125 * (i > decayIters/2.5 & i <= decayIters*.8)+ .025 * (i > decayIters*.8));
+%             i = (epoch-1)*N + p;
+% radius = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
+% alpha = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIters/2.5) + .125 * (i > decayIters/2.5 & i <= decayIters*.8)+ .025 * (i > decayIters*.8));
             %1. stop learning if true.
             if(stop_predicate(W))
                 return;
@@ -495,7 +495,7 @@ alpha = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIte
 end
 
 %% mU matrix
-function fig = plot_mU(fig,fence_color,lat_wid,W,tstr)
+function fig = plot_mU(fig,fence_color,lat_wid,W,tstr,boundary_width)
 %% Header
 % Plot mU matrix. Only works for rectangular/square lattices.
 % Input
@@ -531,12 +531,12 @@ function fig = plot_mU(fig,fence_color,lat_wid,W,tstr)
     colormap(fence_color);
     
     %plot horizontal fences
-    mesh(xg,yg,0*xg,hdiff,'EdgeColor','flat','LineWidth',10,...
+    mesh(xg,yg,0*xg,hdiff,'EdgeColor','flat','LineWidth',boundary_width,...
         'FaceAlpha',0,'MeshStyle','row','Marker','none');
     hold on;
     
     %plot vertical fences
-    mesh(xg,yg,0*xg,vdiff,'EdgeColor','flat','LineWidth',10,...
+    mesh(xg,yg,0*xg,vdiff,'EdgeColor','flat','LineWidth',boundary_width,...
         'FaceAlpha',0,'MeshStyle','column','Marker','none');
     
     view([0 90]);      
