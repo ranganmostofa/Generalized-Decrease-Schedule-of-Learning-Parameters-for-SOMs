@@ -22,8 +22,11 @@ dI = reshape(dataInput',[],4,2); % resheped to give data classes in columns, and
 dimDataInput = size(dataInput,1); % gives the dimensionality of data space
 lattice = createInitLattice(dimDataInput,latticeSize, mean(dataInput,2), std(dataInput,0,2)); % weights initialization
 
+schedules = {'Hard Wired Schedule','Generalized Schedule'};
+
+%% Hard wired schedule
 % Perform self organization
-[finalLattice, stepsToConv, embedding, topology, avgEmbedding, avgTopology, totalError, avTotalError, radius, alpha] = selfOrganize(lattice,dataInput,dI,numIters,initRadius,alphaI,nEmbedEval,tolerance);
+[finalLattice, stepsToConv, embedding, topology, avgEmbedding, avgTopology, totalError, avTotalError, radius, alpha] = selfOrganize(lattice,dataInput,dI,numIters,initRadius,alphaI,nEmbedEval,tolerance,1);
 
 % % giving the final weights of the lattice in Cell form
 % finalLatticeCell = mat2cell(finalLattice,ones(1,latticeSize(1)),ones(1,latticeSize(2)),2); finalLatticeCell = cellfun(@(x)reshape(x,2,1),finalLatticeCell,'un',0);
@@ -34,6 +37,7 @@ lattice = createInitLattice(dimDataInput,latticeSize, mean(dataInput,2), std(dat
 % figure; imagesc(densityLattice); colormap(flipud(gray)); colorbar; title('Density of Inputs mapped to each Prototype')
 
 %% printing convergence steps
+disp([schedules{1},': '])
 if stepsToConv < numIters
     disp(['SOM Converged in ',num2str(stepsToConv),' steps'])
 else
@@ -47,12 +51,30 @@ end
 % plotHistoChart(histoData);
 
 %% plot other things related to embedding
-plotErrorStuff(embedding,topology, avgEmbedding, avgTopology, totalError, avTotalError, radius,alpha,stepsToConv)
+plotErrorStuff(embedding,topology, avgEmbedding, avgTopology, totalError, avTotalError, radius,alpha,stepsToConv,schedules{1})
+
+%% Generalized schedule
+% Perform self organization
+[finalLattice, stepsToConv, embedding, topology, avgEmbedding, avgTopology, totalError, avTotalError, radius, alpha] = selfOrganize(lattice,dataInput,dI,numIters,initRadius,alphaI,nEmbedEval,tolerance,2);
+
+% % giving the final weights of the lattice in Cell form
+% finalLatticeCell = mat2cell(finalLattice,ones(1,latticeSize(1)),ones(1,latticeSize(2)),2); finalLatticeCell = cellfun(@(x)reshape(x,2,1),finalLatticeCell,'un',0);
+
+% printing convergence steps
+disp([schedules{2},': '])
+if stepsToConv < numIters
+    disp(['SOM Converged in ',num2str(stepsToConv),' steps'])
+else
+    disp(['Maximum iterations exhausted = ',num2str(stepsToConv),' steps'])
+end
+
+% plot other things related to embedding
+plotErrorStuff(embedding,topology, avgEmbedding, avgTopology, totalError, avTotalError, radius,alpha,stepsToConv,schedules{2})
 
 end
 
 
-function [finalLattice, stepsToConv, embedding, topology, avgEmbedding, avgTopology, totalError, avTotalError, radiusVec, alphaVec] = selfOrganize(lattice,dataInput,dI,numIters,initRadius,alphaI,nEmbedEval,tolerance)
+function [finalLattice, stepsToConv, embedding, topology, avgEmbedding, avgTopology, totalError, avTotalError, radiusVec, alphaVec] = selfOrganize(lattice,dataInput,dI,numIters,initRadius,alphaI,nEmbedEval,tolerance,scheduleNum)
 % the self organizing map steps here
 checkLength = 5;
 
@@ -62,9 +84,10 @@ latticeIndices(:,:,1) = r(:,ones(1,size(lattice,2))); latticeIndices(:,:,2) = c(
 % % Initial parameters
 % radius = initRadius;
 % alpha = alphaI;
+schedules = {'HWS','GS'};
 
 % plotting initial weights
-plotMappings(dI,lattice,1,1)
+plotMappings(dI,lattice,1,1,schedules{scheduleNum},scheduleNum)
 dum = 2;
 
 radiusSteps = initRadius:-(initRadius-1)/4:1;
@@ -80,21 +103,24 @@ progress = 1;
 for i = 1:numIters
     %     radius = initRadius; % can do decay here
     %     embedding(:,i) = calcEmbed(dataInput, lattice); embedding(6,i) = i;
+
     %% Hard coded scheduling of radius and learning rate
-%     decayIters = 10000;
-%     radius = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
-%     alpha = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIters/2.5) + .125 * (i > decayIters/2.5 & i <= decayIters*.8)+ .025 * (i > decayIters*.8));
-%     
-%     radiusVec(i) = radius; alphaVec(i) = alpha; 
+    if strcmp(schedules{scheduleNum},'HWS')
+    decayIters = 10000;
+    radius = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
+    alpha = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIters/2.5) + .125 * (i > decayIters/2.5 & i <= decayIters*.8)+ .025 * (i > decayIters*.8));
+    
+    radiusVec(i) = radius; alphaVec(i) = alpha; 
+    else
     %% dynamic scheduling of radius and learning rate
-    if ~mod(i/(nEmbedEval * 10),checkLength)     
+    if ~mod(i/(nEmbedEval * 10),checkLength)
         if totalError(1,indexEmbedAvg) >= .9 * mean(totalError(1,indexEmbedAvg-checkLength + 1:indexEmbedAvg - 1))
             progress = min(progress + 1,5);
-        end        
+        end
     end
-        radiusVec(i) = radiusSteps(progress); radius = radiusVec(i);
-        alphaVec(i) = alphaSteps(progress); alpha = alphaVec(i);
-  
+    radiusVec(i) = radiusSteps(progress); radius = radiusVec(i);
+    alphaVec(i) = alphaSteps(progress); alpha = alphaVec(i);
+    end
     %% pick an x (data point) randomly
     x = dataInput(:,randi(size(dataInput,2)));
     
@@ -132,7 +158,7 @@ for i = 1:numIters
 %     if sum(i == [decayIters/10 decayIters/2 decayIters])
      if ~mod(i,1000)   
         % Plot the mapping and input data
-        plotMappings(dI,lattice,i,dum)
+        plotMappings(dI,lattice,i,dum,schedules{scheduleNum},scheduleNum)
         dum = dum + 1;
     end
     
@@ -266,9 +292,9 @@ end
 % 
 % end
 
-function plotMappings(dI,lattice,iter,dum)
+function plotMappings(dI,lattice,iter,dum,schedule,num)
 % Plot the mapping and input data in one subplot
-figure(1); 
+figure(num * 3); 
 r = 5; c = 5; 
 i = ceil(dum/c); j = mod(dum - 1,c); % i = y axis (row) ; j = x axis (column)
 % subplot(2,2,dum);
@@ -277,7 +303,7 @@ hold on;
 plot(dI(:,1,1),dI(:,1,2),'r.');  plot(dI(:,2,1),dI(:,2,2),'m.');  plot(dI(:,3,1),dI(:,3,2),'g.');  plot(dI(:,4,1),dI(:,4,2),'y.');
 plot(lattice(:,:,1),lattice(:,:,2),'ko','MarkerFaceColor','k','MarkerSize',4);
 plot(lattice(:,:,1),lattice(:,:,2),'b-'); plot(lattice(:,:,1)',lattice(:,:,2)','b-');
-legend(num2str(iter))
+legend([num2str(iter),' : ', schedule],'Location','SouthEast')
 % xlabel('First data dimension'); ylabel('Second data dimension'); title(['',num2str(iter),' Learning Steps'])
 % legend('Input data1','Input data2','Input data3','Input data4','Prototype vectors')
 set(ax,'YTickLabel',[]);set(ax,'XTickLabel',[]); set(ax,'Box','on')
@@ -295,7 +321,7 @@ xlabel('First data dimension'); ylabel('Second data dimension'); title(['Plot of
 legend('Input data1','Input data2','Input data3','Input data4','Prototype vectors')
 end
 
-function plotErrorStuff(embedding,topology,avgEmbedding,avgTopology, totalError, avTotalError,radius,alpha,stepsToConv)
+function plotErrorStuff(embedding,topology,avgEmbedding,avgTopology, totalError, avTotalError,radius,alpha,stepsToConv,schedule)
 
 %% plotting Mean and variance changes along with decrease schedules
 % figure(3);
@@ -329,10 +355,10 @@ function plotErrorStuff(embedding,topology,avgEmbedding,avgTopology, totalError,
 
 figure;
 subplot(2,1,1);
-plot(embedding(6,:), totalError); xlabel('Learning steps'); ylabel('Total error metric'); title('Plot of Total Error History')
+plot(embedding(6,:), totalError); xlabel('Learning steps'); ylabel('Total error metric'); title(['Plot of Total Error History : ', schedule])
 hold on; plot(avgEmbedding(2,:), avTotalError,'r');
 subplot(2,1,2);
-plot(1:stepsToConv, radius); xlabel('Learning steps'); ylabel('Radius'); title('Plot of radius and alpha decrease schedule');
+plot(1:stepsToConv, radius); xlabel('Learning steps'); ylabel('Radius'); title(['Plot of radius and alpha decrease schedule : ', schedule]);
 hold on; plot(1:stepsToConv, 10 * alpha); legend('Neighbourhood Radius','Learning rate x 10');
 
 end
