@@ -7,7 +7,7 @@ function generate_hapt_data
 %   structure of this project. That is in, ../dataset/*).
 %RETURN
 %  none : No return value. As a side effect, this function saves smartphone
-%         human activity dataset to hapt_data.mat file.
+%         human activity dataset to ../dataset/hapt_data.mat file.
 %%
 %   
     Xtrain = dlmread('../dataset/hapt_data_set/Train/X_train.txt')';
@@ -29,6 +29,6 @@ function generate_hapt_data
     activityLabel = activityLabel_data{2};
 
     %save the data to in matlab format, so that loading is easy.
-    save('hapt_data','Xtrain','Ytrain','SIDtrain','Xtest','Ytest',...
+    save('../dataset/hapt_data','Xtrain','Ytrain','SIDtrain','Xtest','Ytest',...
       'SIDtest','featureDescription','activityLabel'); 
 end
