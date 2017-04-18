@@ -14,9 +14,9 @@ function som_shoeb
     fsuffix  = sprintf(repmat('_%d', 1, size(osuffix, 2)),osuffix );
     
     %run and collect results for problem2a
-    prob2a(fsuffix);
-    pause(2);
-    close all;
+%     prob2a(fsuffix);
+%     pause(2);
+%     close all;
 %    
 %     % run and collect results for problem2b and problem 3
 %     prob2b_and_3(fsuffix);
@@ -25,6 +25,10 @@ function som_shoeb
 % 
 %     %run and collect results for problem4
 %     prob4(fsuffix); 
+
+    % run and collect results for smartphone dataset
+    probSmartPhone(fsuffix)
+    
     display('Finished running all problems and saved figures/log reports.');
     pause(2);
     fclose('all');
@@ -402,6 +406,131 @@ function [W,total_iter] = prob4(fsuffix)
     display('Finished problem 4');
 end
 
+%% Driver for smartphone data
+function [W,total_iter] = probSmartPhone(fsuffix)
+%% HEADER
+%Function to setup the experiments and run SOM learn.
+%INPUT
+%   fsuffix: character string: file name suffix.
+%RETURN
+%   W : matrix: whose columns represnt the prototypes. The column indices
+%       are equal to lattice node indices.
+%   total_iter : scalar: Number of learning steps when training stopped.
+%%  
+%   setup parameters
+    display('Starting problem 4');
+    [ST,~] = dbstack;
+    this_function = ST.name;
+    
+    %generate data, pre-process data, setup parameeters
+    data           = load('../dataset/hapt_data.mat','Xtrain','Ytrain','Xtest','Ytest');
+    X              = [data.Xtrain, data.Xtest];
+    [~,X]          = pca(X');
+    X              = X';  X = X(1:10,:);
+    D              = [data.Ytrain, data.Ytest];
+    nx             = size(X,2); % data dimensions, #data points
+    lat_length     = 15;      % lattice length
+    lat_width      = 15;      % lattice width
+    M              = lat_length*lat_width;    % number of nodes in lattice.
+    N              = 1e1;     % maximum learning epochs.    
+    tol            = 1;       % classification error percentage tolerance.
+    log_events     = 4e2;     % total instants to log network parameters.
+    plotlog_step   = 20;      % plot logs after 20 calls to the logger.
+    log_step       = floor(N*nx/log_events);
+    mu_init        = 0.1;     % learning rate.
+    mu_final       = 0.01;    % min. learning rate.
+    rad_init       = floor(min([lat_length,lat_width])/2); % initial neighborhood.
+    rad_final      = 1;       % min. allowed radius.
+    T              = 150;     % 1 epoch time
+    mu_decay_fn    = make_hyperbolic_decay(T); % 1 epoch time constant 
+    rad_decay_fn   = make_hyperbolic_decay(T); % 1 epoch time constant
+    lattice        = make_rect_lattice(lat_width);%square lattice.
+    learning_rate_schedule = make_schedule(mu_decay_fn, @(x)(x), ....
+        mu_init,mu_final);
+    radius_schedule = make_schedule(rad_decay_fn,@round,rad_init,rad_final);
+    gaussian_neighborhood_function = ...
+        make_gaussian_neighborhood_function(lattice, ...
+        @(vi,vj)(sum(abs(vi-vj))), ...       
+        radius_schedule);
+    error_function = make_error_function();
+    som_stop_predicate = make_stop_predicate(error_function,tol);
+       
+    %% create filenames/open output reporting files, figures
+    ofile    = strcat(this_function,'out',fsuffix,'.txt');
+    outfile  = fopen(ofile,'wt');
+    fprintf('Performance characteristics will be printed in file: %s\n', ...
+        ofile);
+    fprintf(['Performance graphs will be plotted in files with ' ....
+        'suffices: %s\n'],fsuffix);
+    
+
+    unique_class = length(unique(D));
+    label_color = mat2cell(hsv(unique_class+1),ones(1,unique_class+1),3);
+    label_text  = {'','WALKING','WALKING\_UPSTAIRS','WALKING\_DOWNSTAIRS',...
+        'SITTING','STANDING','LAYING','STAND\_TO\_SIT','SIT\_TO\_STAND',...
+        'SIT\_TO\_LIE','LIE\_TO\_SIT','STAND\_TO\_LIE','LIE\_TO\_STAND'};
+    function fig = diag_plot(fig,W,tstr)
+    % nested function. wrapper for plotting functions.
+        fig = figure(fig);
+        whitebg([0 0 0]);
+        axis([1 lat_length+1 1 lat_width+1]);
+        class_color = mat2cell(repmat([0 0 0],unique_class+1,1),...
+            ones(1,unique_class+1),3);
+        fig = decorate_class_color(fig,lattice,W,X,D,class_color,tstr,2);
+        fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1],1);
+        fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr,2);
+        fig = decorate_class_label(fig,lattice,W,X,D,label_text,...
+            label_color,5,tstr);
+    end
+    
+    som_logger = make_logger(error_function,learning_rate_schedule,...
+        radius_schedule,outfile,N,nx,tol,plotlog_step,...
+        @diag_plot,'Smartphone Data',...
+        strcat(this_function,'_',fsuffix));
+    
+    %% learn using som_learn
+    [W,total_iter] = som_learn(X, M, gaussian_neighborhood_function, ... 
+        learning_rate_schedule, N, som_stop_predicate, ...
+        som_logger, log_step);
+    
+    %% Process results after training.
+    fig = figure;
+    axis([1 lat_length+1 1 lat_width+1]);
+    whitebg([0 0 0]);
+    tstr = 'Smartphone Data, Fence, weights and labels after training';
+    fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1],1);
+    fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr,2);
+    fig = decorate_class_label(fig,lattice,W,X,D,label_text,...
+            label_color,5,tstr);
+    saveas(gcf,sprintf(['%sfig%d_after_training_mU_matrix_and_weights_'...
+        '%s.fig'],this_function,fig,fsuffix));
+    
+    fig = figure;
+    axis([1 lat_length+1 1 lat_width+1]);
+    tstr = 'Smartphone Data, Class color map, labels and weights after training';
+    colmapcell = label_color;
+    label_color = mat2cell(repmat([1 1 1],unique_class+1,1),...
+        ones(1,unique_class+1),3);
+    fig = decorate_class_color(fig,lattice,W,X,D,colmapcell,tstr,0.1);
+    fig = decorate_class_label(fig,lattice,W,X,D,label_text,...
+            label_color,5,tstr);
+    saveas(gcf,sprintf(['%sfig%d_after_training_classfication_'....
+        'class_color_label_%s.fig'],this_function,fig,fsuffix));
+
+    fig = figure;
+    axis([1 lat_length+1 1 lat_width+1]);
+    tstr = 'Smartphone Data, Class color map, labels and weights after training';
+    fig = decorate_class_color(fig,lattice,W,X,D,colmapcell,tstr,0.1);
+    fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1],1);
+    fig = decorate_class_label(fig,lattice,W,X,D,label_text,...
+            label_color,5,tstr);
+    saveas(gcf,sprintf(['%sfig%d_after_training_classfication_'....
+        'class_color_label_weights_%s.fig'],this_function,fig,fsuffix));
+
+    fprintf('Total learning steps: %d\n',total_iter);
+    display('Finished problem for smartphone dataset');
+end
+
 %% som_learn function
 function [W,iter] = som_learn(X,M,h,eta,N,stop_predicate,som_logger, ...
     log_step)
@@ -572,7 +701,7 @@ function fig = decorate_class_color(fig,latf,W,X,D,class_color,tstr,...
     c_store = zeros(1,nX);
     
     for p = 1:nX
-        Q = bsxfun(@(x,w)((x-w).^2),W,X(:,p));  % L2 norm for distance
+        Q = (W - repmat(X(:,p),1,M)).^2;      % Euclidean distance 
         [~,m_store(p)] = min(sum(Q,1));
         c_store(p) = get_class_index(p);
         bin(c_store(p),m_store(p)) = bin(c_store(p),m_store(p)) + 1;
@@ -631,7 +760,7 @@ function fig = decorate_class_label(fig,latf,W,X,D,label,label_color,...,
     c_store = zeros(1,nX);
     
     for p = 1:nX
-        Q = bsxfun(@(x,w)((x-w).^2),W,X(:,p));       % L2 norm for distance
+        Q = (W - repmat(X(:,p),1,M)).^2;      % Euclidean distance 
         [~,m_store(p)] = min(sum(Q,1));
         c_store(p) = get_class_index(p);
         bin(c_store(p),m_store(p)) = bin(c_store(p),m_store(p)) + 1;
@@ -995,7 +1124,7 @@ function match = best_match_node(W,x)
 %RETURN
 %   match : scalar: index of node with best match. 
 %%
-    Q     = bsxfun(@(x,w)((x-w).^2),W,x);  % L2 norm for distance
+    Q = (W - repmat(x,1,M)).^2;      % Euclidean distance 
     [~,match] = min(sum(Q,1));
 end
 
