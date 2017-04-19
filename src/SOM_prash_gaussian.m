@@ -7,17 +7,26 @@ function SOM2
 % used as a multi-dimensional matrix
 
 latticeSize = [8 8];
-initRadius = max(latticeSize)/2; % Initial radius of influence
+initRadius = max(latticeSize); % Initial radius of influence
 
-numIters = 24000; % number of learning steps
-alphaI = .4; % learning rate
+numIters = 64000; % number of learning steps
+alphaI = .8; % learning rate
 
 nEmbedEval = 50; % Evaluating the embedding and topology every nEmbedEval number of learning steps
 tolerance = .1;  % Convergence criteria for total error
 
 % Input data entry
-dataInput = [createGaussians([2 1000],[.1 .1],[7 7]), createGaussians([2 1000],[.1 .1],[0 7]), createGaussians([2 1000],[.1 .1],[7 0]), createGaussians([2 1000],[.1 .1],[0 0]),]; % each COLUMN is a data vector
-dI = reshape(dataInput',[],4,2); % resheped to give data classes in columns, and data co-ordinates in 3rd dimension
+% load('../dataset/iris_data.mat');
+% dataInput = [trainInput  testInput];
+% numDataCategories = 4;
+% dataClasses = [trainOutput testOutput];
+% dI = reshape(dataInput',[],numDataCategories,2); % resheped to give data classes in columns, and data co-ordinates in 3rd dimension
+
+% dataInput = [createGaussians([2 1000],[.1 .1],[7 7]), createGaussians([2 1000],[.1 .1],[0 7]), createGaussians([2 1000],[.1 .1],[7 0]), createGaussians([2 1000],[.1 .1],[0 0]),]; % each COLUMN is a data vector
+
+dataInput = [createGaussians([3 1000],[.1 .1 1],[7 7 0]), createGaussians([3 1000],[.1 .1 1],[0 7 0]), createGaussians([3 1000],[.1 .1 1],[7 0 0]), createGaussians([3 1000],[.1 .1 1],[0 0 0]),]; % each COLUMN is a data vector
+numDataCategories = 4;
+dI = reshape(dataInput',[],numDataCategories,2); % resheped to give data classes in columns, and data co-ordinates in 3rd dimension
 
 dimDataInput = size(dataInput,1); % gives the dimensionality of data space
 lattice = createInitLattice(dimDataInput,latticeSize, mean(dataInput,2), std(dataInput,0,2)); % weights initialization
@@ -295,27 +304,31 @@ end
 
 function plotMappings(dI,lattice,iter,dum,schedule,num)
 % Plot the mapping and input data in one subplot
-figure(num * 3); 
-r = 5; c = 5; 
-i = ceil(dum/c); j = mod(dum - 1,c); % i = y axis (row) ; j = x axis (column)
-% subplot(2,2,dum);
-ax = axes('position',[(j)/c (r-i)/r 1/r 1/c]);
-hold on;
-plot(dI(:,1,1),dI(:,1,2),'r.');  plot(dI(:,2,1),dI(:,2,2),'m.');  plot(dI(:,3,1),dI(:,3,2),'g.');  plot(dI(:,4,1),dI(:,4,2),'y.');
-plot(lattice(:,:,1),lattice(:,:,2),'ko','MarkerFaceColor','k','MarkerSize',4);
-plot(lattice(:,:,1),lattice(:,:,2),'b-'); plot(lattice(:,:,1)',lattice(:,:,2)','b-');
-legend([num2str(iter),' : ', schedule],'Location','SouthEast')
-% xlabel('First data dimension'); ylabel('Second data dimension'); title(['',num2str(iter),' Learning Steps'])
-% legend('Input data1','Input data2','Input data3','Input data4','Prototype vectors')
-set(ax,'YTickLabel',[]);set(ax,'XTickLabel',[]); set(ax,'Box','on')
+% figure(num * 3); 
+% r = 5; c = 5; 
+% i = ceil(dum/c); j = mod(dum - 1,c); % i = y axis (row) ; j = x axis (column)
+% % subplot(2,2,dum);
+% ax = axes('position',[(j)/c (r-i)/r 1/r 1/c]);
+% set(gca,'ColorOrder',[1 0 0; 1 0 1 ; 0 1 0; 1 1 0],'NextPlot', 'replacechildren')
+% hold on;
+% plot(dI(:,:,1),dI(:,:,2),'.');
+% % plot(dI(:,1,1),dI(:,1,2),'r.');  plot(dI(:,2,1),dI(:,2,2),'m.');  plot(dI(:,3,1),dI(:,3,2),'g.');  plot(dI(:,4,1),dI(:,4,2),'y.');
+% plot(lattice(:,:,1),lattice(:,:,2),'ko','MarkerFaceColor','k','MarkerSize',2);
+% plot(lattice(:,:,1),lattice(:,:,2),'b-'); plot(lattice(:,:,1)',lattice(:,:,2)','b-');
+% legend([num2str(iter),' : ', schedule],'Location','SouthEast')
+% % xlabel('First data dimension'); ylabel('Second data dimension'); title(['',num2str(iter),' Learning Steps'])
+% % legend('Input data1','Input data2','Input data3','Input data4','Prototype vectors')
+% set(ax,'YTickLabel',[]);set(ax,'XTickLabel',[]); set(ax,'Box','on')
 end
 
 
 function plotFinalMap(dI,finalLattice,stepsToConv)
 % plotting final prototype configuration w coloured known data classes
 figure;
+set(gca,'ColorOrder',[1 0 0; 1 0 1 ; 0 1 0; 1 1 0],'NextPlot', 'replacechildren')
 hold on;
-plot(dI(:,1,1),dI(:,1,2),'r.');  plot(dI(:,2,1),dI(:,2,2),'m.');  plot(dI(:,3,1),dI(:,3,2),'g.');  plot(dI(:,4,1),dI(:,4,2),'y.');
+plot(dI(:,:,1),dI(:,:,2),'.');
+% plot(dI(:,1,1),dI(:,1,2),'r.');  plot(dI(:,2,1),dI(:,2,2),'m.');  plot(dI(:,3,1),dI(:,3,2),'g.');  plot(dI(:,4,1),dI(:,4,2),'y.');
 plot(finalLattice(:,:,1),finalLattice(:,:,2),'ko','MarkerFaceColor','k','MarkerSize',4);
 plot(finalLattice(:,:,1),finalLattice(:,:,2),'b-'); plot(finalLattice(:,:,1)',finalLattice(:,:,2)','b-');
 xlabel('First data dimension'); ylabel('Second data dimension'); title(['Plot of prototypes in input space: Final after ',num2str(stepsToConv),' Learning Steps'])
