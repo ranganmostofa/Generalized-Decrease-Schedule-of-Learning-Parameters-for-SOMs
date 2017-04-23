@@ -14,7 +14,7 @@ function som_shoeb
     fsuffix  = sprintf(repmat('_%d', 1, size(osuffix, 2)),osuffix );
     
     %run and collect results for problem2a
-    prob2a(fsuffix);
+%     prob2a(fsuffix);
 %     pause(2);
 %     close all;
 %    
@@ -25,8 +25,12 @@ function som_shoeb
 % 
 %     %run and collect results for problem4
 %     prob4(fsuffix); 
-%     display('Finished running all problems and saved figures/log reports.');
-%     pause(2);
+
+    % run and collect results for smartphone dataset
+    probSmartPhone(fsuffix)
+    
+    display('Finished running all problems and saved figures/log reports.');
+    pause(2);
     fclose('all');
 
 end
@@ -125,40 +129,42 @@ function [W,total_iter] = prob2a(fsuffix)
         hold off;
     end
 
-%     fig = figure;
-%     fig = mesh2D_prototype_topology(fig,W,sprintf(['End of training, '...
-%         'total steps:%d'],total_iter),vw);
-%     fig = scatter2D_data_points(fig,X,D,sprintf(['End of training, '...
-%         'total steps:%d'],total_iter),vw);
-%     saveas(gcf,sprintf('%sfig%d_after_training_data_plot_%s.fig',...
-%         this_function,fig,fsuffix));
-% 
-%     fig = figure;
-%     whitebg('black');
-%     tstr = 'Problem 2a, Fence and weights after training';
-%     fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr);
-%     fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1]);
-%     saveas(gcf,sprintf(['%sfig%d_after_training_mU_matrix_and_weights_'...
-%         '%s.fig'],this_function,fig,fsuffix));
-% 
-%     fig = figure;
-%     tstr = 'Problem 2a, Class colors and weights';
-%     colmapcell = {[0 0 0],[0 0.251 0],[0.251 0 0.502],[1 0.502 0.502],...
-%         [0.502 0 0]};
-%     fig = decorate_class_color(fig,lattice,W,X,D,colmapcell,tstr,0.1);
-%     fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1]);
-%     saveas(gcf,sprintf(['%sfig%d_after_training_classfication_'....
-%         'colors_and_weights_%s.fig'],this_function,fig,fsuffix));
-% 
-%     fig = figure;
-%     tstr = 'Problem 2a, Fence, class color map, and weights';
-%     fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr);
-%     fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1]);
-%     fig = decorate_class_color(fig,lattice,W,X,D,colmapcell,tstr,5);
-%     saveas(gcf,sprintf('%sfig%d_after_training_all_overlaid_', ...
-%         this_function,fig,fsuffix));
-% 
-%     whitebg('white');
+    fig = figure;
+    fig = mesh2D_prototype_topology(fig,W,sprintf(['End of training, '...
+        'total steps:%d'],total_iter),vw);
+    fig = scatter2D_data_points(fig,X,D,sprintf(['End of training, '...
+        'total steps:%d'],total_iter),vw);
+    saveas(gcf,sprintf('%sfig%d_after_training_data_plot_%s.fig',...
+        this_function,fig,fsuffix));
+
+    fig = figure;
+    whitebg([0 0 0]);
+    tstr = 'Problem 2a, Fence and weights after training';
+    fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr,2);
+    fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1],1);
+    saveas(gcf,sprintf(['%sfig%d_after_training_mU_matrix_and_weights_'...
+        '%s.fig'],this_function,fig,fsuffix));
+
+    fig = figure;
+    whitebg([0 0 0]);
+    tstr = 'Problem 2a, Class colors and weights';
+    colmapcell = {[0 0 0],[0 0.251 0],[0.251 0 0.502],[1 0.502 0.502],...
+        [0.502 0 0]};
+    fig = decorate_class_color(fig,lattice,W,X,D,colmapcell,tstr,0.1);
+    fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1],1);
+    saveas(gcf,sprintf(['%sfig%d_after_training_classfication_'....
+        'colors_and_weights_%s.fig'],this_function,fig,fsuffix));
+
+    fig = figure;
+    whitebg([0 0 0]);
+    tstr = 'Problem 2a, Fence, class color map, and weights';
+    fig = decorate_class_color(fig,lattice,W,X,D,colmapcell,tstr,2);
+    fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1],1);
+    fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr,2);
+    saveas(gcf,sprintf('%sfig%d_after_training_all_overlaid_', ...
+        this_function,fig,fsuffix));
+
+    whitebg('white');
     fprintf('Total learning steps: %d\n',total_iter);
     display('Finished problem 2a');
 end
@@ -355,19 +361,19 @@ function [W,total_iter] = prob4(fsuffix)
     function fig = diag_plot(fig,W,tstr)
     % nested function. wrapper for plotting functions.
         fig = figure(fig);
-        whitebg('black');
+        whitebg([0 0 0]);
         class_color = {[0 0 0], [0 0 0], [0 0 0], [0 0 0]};
-        fig = decorate_class_color(fig,lattice,W,X,D,class_color,tstr,5);
+        fig = decorate_class_color(fig,lattice,W,X,D,class_color,tstr,2);
+        fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1],1);
+        fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr,2);
         fig = decorate_class_label(fig,lattice,W,X,D,label_text,...
-            label_color,5,tstr);
-        fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr);
-        fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1]);
+            label_color,4,tstr);
     end
-
+    
     som_logger = make_logger(error_function,learning_rate_schedule,...
-        radius_schedule,outfile,N,nx,tol,log_step,plotlog_step,...
-        @diag_plot,...
-        strcat(this_function,'_',fsuffix),'Problem4, iris dataset');
+        radius_schedule,outfile,N,nx,tol,plotlog_step,...
+        @diag_plot,'Problem4, iris dataset',...
+        strcat(this_function,'_',fsuffix));
     
     %% learn using som_learn
     [W,total_iter] = som_learn(X, M, gaussian_neighborhood_function, ... 
@@ -376,12 +382,12 @@ function [W,total_iter] = prob4(fsuffix)
     
     %% Process results after training.
     fig = figure;
-    whitebg('black');
+    whitebg([0 0 0]);
     tstr = 'Problem 4, Fence, weights and labels after training';
-    fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr);
-    fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1]);
+    fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1],1);
+    fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr,2);
     fig = decorate_class_label(fig,lattice,W,X,D,label_text,...
-            label_color,5,tstr);
+            label_color,4,tstr);
     saveas(gcf,sprintf(['%sfig%d_after_training_mU_matrix_and_weights_'...
         '%s.fig'],this_function,fig,fsuffix));
 
@@ -390,7 +396,7 @@ function [W,total_iter] = prob4(fsuffix)
     label_color = {[0 0 0], [1 1 1], [1 1 1], [1 1 1]};
     colmapcell  = {[0 0 0], [1 0 1], [0 1 1], [0 1 0]};
     fig = decorate_class_color(fig,lattice,W,X,D,colmapcell,tstr,0.1);
-    fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1]);
+    fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1],1);
     fig = decorate_class_label(fig,lattice,W,X,D,label_text,...
             label_color,5,tstr);
     saveas(gcf,sprintf(['%sfig%d_after_training_classfication_'....
@@ -398,6 +404,131 @@ function [W,total_iter] = prob4(fsuffix)
 
     fprintf('Total learning steps: %d\n',total_iter);
     display('Finished problem 4');
+end
+
+%% Driver for smartphone data
+function [W,total_iter] = probSmartPhone(fsuffix)
+%% HEADER
+%Function to setup the experiments and run SOM learn.
+%INPUT
+%   fsuffix: character string: file name suffix.
+%RETURN
+%   W : matrix: whose columns represnt the prototypes. The column indices
+%       are equal to lattice node indices.
+%   total_iter : scalar: Number of learning steps when training stopped.
+%%  
+%   setup parameters
+    display('Starting problem 4');
+    [ST,~] = dbstack;
+    this_function = ST.name;
+    
+    %generate data, pre-process data, setup parameeters
+    data           = load('../dataset/hapt_data.mat','Xtrain','Ytrain','Xtest','Ytest');
+    X              = [data.Xtrain, data.Xtest];
+    [~,X]          = pca(X');
+    X              = X';  X = X(1:10,:);
+    D              = [data.Ytrain, data.Ytest];
+    nx             = size(X,2); % data dimensions, #data points
+    lat_length     = 15;      % lattice length
+    lat_width      = 15;      % lattice width
+    M              = lat_length*lat_width;    % number of nodes in lattice.
+    N              = 1e1;     % maximum learning epochs.    
+    tol            = 1;       % classification error percentage tolerance.
+    log_events     = 4e2;     % total instants to log network parameters.
+    plotlog_step   = 20;      % plot logs after 20 calls to the logger.
+    log_step       = floor(N*nx/log_events);
+    mu_init        = 0.1;     % learning rate.
+    mu_final       = 0.01;    % min. learning rate.
+    rad_init       = floor(min([lat_length,lat_width])/2); % initial neighborhood.
+    rad_final      = 1;       % min. allowed radius.
+    T              = 150;     % 1 epoch time
+    mu_decay_fn    = make_hyperbolic_decay(T); % 1 epoch time constant 
+    rad_decay_fn   = make_hyperbolic_decay(T); % 1 epoch time constant
+    lattice        = make_rect_lattice(lat_width);%square lattice.
+    learning_rate_schedule = make_schedule(mu_decay_fn, @(x)(x), ....
+        mu_init,mu_final);
+    radius_schedule = make_schedule(rad_decay_fn,@round,rad_init,rad_final);
+    gaussian_neighborhood_function = ...
+        make_gaussian_neighborhood_function(lattice, ...
+        @(vi,vj)(sum(abs(vi-vj))), ...       
+        radius_schedule);
+    error_function = make_error_function();
+    som_stop_predicate = make_stop_predicate(error_function,tol);
+       
+    %% create filenames/open output reporting files, figures
+    ofile    = strcat(this_function,'out',fsuffix,'.txt');
+    outfile  = fopen(ofile,'wt');
+    fprintf('Performance characteristics will be printed in file: %s\n', ...
+        ofile);
+    fprintf(['Performance graphs will be plotted in files with ' ....
+        'suffices: %s\n'],fsuffix);
+    
+
+    unique_class = length(unique(D));
+    label_color = mat2cell(hsv(unique_class+1),ones(1,unique_class+1),3);
+    label_text  = {'','WALKING','WALKING\_UPSTAIRS','WALKING\_DOWNSTAIRS',...
+        'SITTING','STANDING','LAYING','STAND\_TO\_SIT','SIT\_TO\_STAND',...
+        'SIT\_TO\_LIE','LIE\_TO\_SIT','STAND\_TO\_LIE','LIE\_TO\_STAND'};
+    function fig = diag_plot(fig,W,tstr)
+    % nested function. wrapper for plotting functions.
+        fig = figure(fig);
+        whitebg([0 0 0]);
+        axis([1 lat_length+1 1 lat_width+1]);
+        class_color = mat2cell(repmat([0 0 0],unique_class+1,1),...
+            ones(1,unique_class+1),3);
+        fig = decorate_class_color(fig,lattice,W,X,D,class_color,tstr,2);
+        fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1],1);
+        fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr,2);
+        fig = decorate_class_label(fig,lattice,W,X,D,label_text,...
+            label_color,5,tstr);
+    end
+    
+    som_logger = make_logger(error_function,learning_rate_schedule,...
+        radius_schedule,outfile,N,nx,tol,plotlog_step,...
+        @diag_plot,'Smartphone Data',...
+        strcat(this_function,'_',fsuffix));
+    
+    %% learn using som_learn
+    [W,total_iter] = som_learn(X, M, gaussian_neighborhood_function, ... 
+        learning_rate_schedule, N, som_stop_predicate, ...
+        som_logger, log_step);
+    
+    %% Process results after training.
+    fig = figure;
+    axis([1 lat_length+1 1 lat_width+1]);
+    whitebg([0 0 0]);
+    tstr = 'Smartphone Data, Fence, weights and labels after training';
+    fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1],1);
+    fig = plot_mU(fig,1-colormap(gray),lat_width,W,tstr,2);
+    fig = decorate_class_label(fig,lattice,W,X,D,label_text,...
+            label_color,5,tstr);
+    saveas(gcf,sprintf(['%sfig%d_after_training_mU_matrix_and_weights_'...
+        '%s.fig'],this_function,fig,fsuffix));
+    
+    fig = figure;
+    axis([1 lat_length+1 1 lat_width+1]);
+    tstr = 'Smartphone Data, Class color map, labels and weights after training';
+    colmapcell = label_color;
+    label_color = mat2cell(repmat([1 1 1],unique_class+1,1),...
+        ones(1,unique_class+1),3);
+    fig = decorate_class_color(fig,lattice,W,X,D,colmapcell,tstr,0.1);
+    fig = decorate_class_label(fig,lattice,W,X,D,label_text,...
+            label_color,5,tstr);
+    saveas(gcf,sprintf(['%sfig%d_after_training_classfication_'....
+        'class_color_label_%s.fig'],this_function,fig,fsuffix));
+
+    fig = figure;
+    axis([1 lat_length+1 1 lat_width+1]);
+    tstr = 'Smartphone Data, Class color map, labels and weights after training';
+    fig = decorate_class_color(fig,lattice,W,X,D,colmapcell,tstr,0.1);
+    fig = decorate_weight_vector(fig,lattice,W,tstr,[1 1 1],1);
+    fig = decorate_class_label(fig,lattice,W,X,D,label_text,...
+            label_color,5,tstr);
+    saveas(gcf,sprintf(['%sfig%d_after_training_classfication_'....
+        'class_color_label_weights_%s.fig'],this_function,fig,fsuffix));
+
+    fprintf('Total learning steps: %d\n',total_iter);
+    display('Finished problem for smartphone dataset');
 end
 
 %% som_learn function
@@ -451,9 +582,8 @@ function [W,iter] = som_learn(X,M,h,eta,N,stop_predicate,som_logger, ...
     [mx,nx] = size(X);            % its better if pre-processing type is 
     X_mean = mean(X,2);           % also a parameter for som_learn.
     X_scale= max(abs(X(:)));
-    X      = bsxfun(@minus, X,X_mean);
-    X      = bsxfun(@rdivide, X,X_scale);% X is now normalized input
-    W = 2*rand(mx,M,'double')-1;         % initialialize weights.
+    X      = (X - repmat(X_mean,1,nx))/X_scale; % X is now normalized input 
+    W = (max(X(:))-min(X(:)))*rand(mx,M,'double')+min(X(:));% initialialize weights. 
     h('reset');                          % initialize neighborhood function
     mu=eta('reset');                     % initialize learning rate.    
     iter = 0;                            % total iterations counter.
@@ -462,20 +592,18 @@ function [W,iter] = som_learn(X,M,h,eta,N,stop_predicate,som_logger, ...
         for p = randperm(nx)
             % bokekeeping (call logger)
             if(mod(iter,log_step)==0)
-                W_denormalized = bsxfun(@times,W,X_scale); 
-                W_denormalized = bsxfun(@plus,W_denormalized,X_mean);
-                som_logger(iter,W_denormalized);      
+                som_logger(iter,W*X_scale + repmat(X_mean,1,M));      
             end
-            i = (epoch-1)*N + p;
-radius = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
-alpha = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIters/2.5) + .125 * (i > decayIters/2.5 & i <= decayIters*.8)+ .025 * (i > decayIters*.8));
+%             i = (epoch-1)*N + p;
+% radius = initRadius * ((i <= decayIters/5) + .8 * (i > decayIters/5 & i <= decayIters/2) + .5 * (i > decayIters/2 & i <= decayIters*.8)+ .2 * (i > decayIters*.8));
+% alpha = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIters/2.5) + .125 * (i > decayIters/2.5 & i <= decayIters*.8)+ .025 * (i > decayIters*.8));
             %1. stop learning if true.
             if(stop_predicate(W))
                 return;
             end
             
             %2. find best match
-            Q = bsxfun(@(x,w)((x-w).^2),W,X(:,p));  % Euclidean distance
+            Q = (W - repmat(X(:,p),1,M)).^2;      % Euclidean distance 
             [~,c] = min(sum(Q,1));
             
             %3. update weights.
@@ -490,12 +618,11 @@ alpha = alphaI * ((i <= decayIters/10) + .5 * (i > decayIters/10 & i <= decayIte
         end
     end
 
-    W = bsxfun(@times,W,X_scale); 
-    W = bsxfun(@plus,W,X_mean);
+    W = W*X_scale + repmat(X_mean,1,M);
 end
 
 %% mU matrix
-function fig = plot_mU(fig,fence_color,lat_wid,W,tstr)
+function fig = plot_mU(fig,fence_color,lat_wid,W,tstr,boundary_width)
 %% Header
 % Plot mU matrix. Only works for rectangular/square lattices.
 % Input
@@ -515,28 +642,32 @@ function fig = plot_mU(fig,fence_color,lat_wid,W,tstr)
     hdiff = Wpad(1:lat_wid+1,2:lat_len+1,:) - ...
         Wpad(2:lat_wid+2,2:lat_len+1,:);
     vdiff = Wpad(2:lat_wid+1,1:lat_len+1,:) - ...
-        Wpad(2:lat_wid+1,2:lat_len+2,:);    
+        Wpad(2:lat_wid+1,2:lat_len+2,:); 
     
-    hdiff = sum(hdiff.^2,3);    % find distance. hdiff : horiontal neighbors, 
-    vdiff = sum(vdiff.^2,3);    % vdiff for vertical.
+    % find distance. hdiff : horiontal neighbors, 
+    hdiff = sqrt(sum(hdiff.^2,3)./sum(Wpad(1:lat_wid+1,2:lat_len+1,:).^2,3));
+    
+    % vdiff for vertical.
+    vdiff = sqrt(sum(vdiff.^2,3)./sum(Wpad(2:lat_wid+1,1:lat_len+1,:).^2,3));
     [xg,yg] = meshgrid(1:lat_wid+1,1:lat_len+1);
     hdiff(isnan(hdiff)) = 0;
     vdiff(isnan(vdiff)) = 0;   
     scale = max([ max(abs(hdiff(:))), max(abs(vdiff(:))) ]);
     
-    hdiff = 1 - hdiff/scale;    % on gray scale, assume better matches 
-    vdiff = 1 - vdiff/scale;    % move to white.
+    hdiff = 1-hdiff/scale;    % on gray scale, assume better matches 
+    vdiff = 1-vdiff/scale;    % move to white.
     
     figure(fig);
     colormap(fence_color);
     
     %plot horizontal fences
-    mesh(xg,yg,0*xg,hdiff,'EdgeColor','flat','LineWidth',10,...
+    mesh(xg,yg,0*xg,hdiff,'EdgeColor','flat','LineWidth',boundary_width,...
         'FaceAlpha',0,'MeshStyle','row','Marker','none');
     hold on;
+    grid off;
     
     %plot vertical fences
-    mesh(xg,yg,0*xg,vdiff,'EdgeColor','flat','LineWidth',10,...
+    mesh(xg,yg,0*xg,vdiff,'EdgeColor','flat','LineWidth',boundary_width,...
         'FaceAlpha',0,'MeshStyle','column','Marker','none');
     
     view([0 90]);      
@@ -570,7 +701,7 @@ function fig = decorate_class_color(fig,latf,W,X,D,class_color,tstr,...
     c_store = zeros(1,nX);
     
     for p = 1:nX
-        Q = bsxfun(@(x,w)((x-w).^2),W,X(:,p));  % L2 norm for distance
+        Q = (W - repmat(X(:,p),1,M)).^2;      % Euclidean distance 
         [~,m_store(p)] = min(sum(Q,1));
         c_store(p) = get_class_index(p);
         bin(c_store(p),m_store(p)) = bin(c_store(p),m_store(p)) + 1;
@@ -587,9 +718,10 @@ function fig = decorate_class_color(fig,latf,W,X,D,class_color,tstr,...
  
     fig=figure(fig);
     hold on;
+    grid off;
     for i = 1:M
         ind = latf(i);
-        ver = [ind(1)+v(:,1),ind(2)+v(:,2)];
+        ver = [ind(2)+v(:,1),ind(1)+v(:,2)];
         fa = density_store(i) / max(abs(density_store(:)));
         patch('Faces',f,'Vertices',ver, 'FaceColor',...
             class_color{majority_class(i)},'FaceAlpha',fa,...
@@ -628,7 +760,7 @@ function fig = decorate_class_label(fig,latf,W,X,D,label,label_color,...,
     c_store = zeros(1,nX);
     
     for p = 1:nX
-        Q = bsxfun(@(x,w)((x-w).^2),W,X(:,p));       % L2 norm for distance
+        Q = (W - repmat(X(:,p),1,M)).^2;      % Euclidean distance 
         [~,m_store(p)] = min(sum(Q,1));
         c_store(p) = get_class_index(p);
         bin(c_store(p),m_store(p)) = bin(c_store(p),m_store(p)) + 1;
@@ -642,9 +774,10 @@ function fig = decorate_class_label(fig,latf,W,X,D,label,label_color,...,
  
     fig=figure(fig);
     hold on;
+    grid off;
     for i = 1:M
         ind = latf(i);
-        ver = [ind(1)+v(1),ind(2)+v(2)];
+        ver = [ind(2)+v(1),ind(1)+v(2)];
         text(ver(:,1), ver(:,2),label{majority_class(i)}, ...
             'Color',label_color{majority_class(i)},'FontSize',...
             label_fontsize);
@@ -654,7 +787,7 @@ function fig = decorate_class_label(fig,latf,W,X,D,label,label_color,...,
 end
 
 %% weight vectors
-function fig = decorate_weight_vector(fig,latf,W,tstr,line_color)
+function fig = decorate_weight_vector(fig,latf,W,tstr,line_color,line_width)
 %% Header
 % Decorate plot with weight vectors.  Plots the weight vectors in unit
 % squares whose corner coordinates are given by lattice 'latf' (see below).
@@ -674,11 +807,12 @@ function fig = decorate_weight_vector(fig,latf,W,tstr,line_color)
     v = zeros(M,2);
     figure(fig);
     hold on;
+    grid off;
     for i = 1:M
         v(i,:) = latf(i);
         y = (0.2)* (W(:,i)/max(abs(W(:,i)))) + 0.5;
-        plot(xval+v(i,1), y+v(i,2),...
-            'Color',line_color,'LineWidth',2);
+        plot(xval+v(i,2), y+v(i,1),...
+            'Color',line_color,'LineWidth',line_width);
     end
     title(tstr);
 end
@@ -990,7 +1124,7 @@ function match = best_match_node(W,x)
 %RETURN
 %   match : scalar: index of node with best match. 
 %%
-    Q     = bsxfun(@(x,w)((x-w).^2),W,x);  % L2 norm for distance
+    Q = (W - repmat(x,1,M)).^2;      % Euclidean distance 
     [~,match] = min(sum(Q,1));
 end
 

@@ -1,0 +1,403 @@
+\documentclass[epsfig]{article}
+\usepackage{epsfig}
+\usepackage{amsmath}
+%\usepackage{mfpic}
+\usepackage{amsthm}
+\usepackage{neuralnetwork}
+\usepackage{mathtools}
+\usepackage{pdflscape}
+\usepackage{color}
+\usepackage{siunitx}
+\usepackage{listings}
+\usepackage{subfigmat}
+\usepackage{subfigure}
+\usepackage{color}
+
+\textwidth 6.7in
+\oddsidemargin -0.1in
+\textheight 8.50in
+\topmargin -0.55in
+\renewcommand{\textfraction}{0.25}
+\renewcommand{\floatpagefraction}{0.7}
+\markboth{}{\sl Shoeb Mohammed \hfil COMP 502 \hfil Homework 7 }
+\pagestyle{myheadings}
+
+\def\bpar{\vskip26pt}
+\def\npar{\vskip13pt}
+\def\spar{\vskip10pt}
+
+% example figure includes
+%\begin{landscape}
+%\begin{figure}[h!]
+%\caption{Learning History: Best result (problem 2.1)}
+%\includegraphics[width=\linewidth,height=0.7\linewidth]{prob2fig_error_history_best_parameters__2017_2_22_16_29_39.png}
+%\end{figure}
+%\end{landscape}
+%
+%\begin{landscape}
+%\begin{figure}[h!]
+%\caption{Desired vs Actual output : Best result (problem 2.1)}
+%\includegraphics[width=\linewidth,height=0.7\linewidth]{prob2fig_data_compare_best_parameters__2017_2_22_16_29_39.png}
+%\end{figure}
+%\end{landscape}
+
+\begin{document}
+\parindent=0pt
+\null\bpar
+\centerline{\bf Homework 7}
+%
+%
+%
+% PROBLEM 1A
+%
+%
+%
+\bpar
+{\bf Problem 1/a.}
+\spar
+%
+%
+%
+\spar
+
+{
+\begin{tabular}{ll}
+\hline
+\hline
+\multicolumn{2}{c}{\textsc{parameters for problem 1/a}} \\
+\hline
+\hline
+Data			   & as described in homework \\
+\hline
+Pre-processing          &  none. \\
+\hline
+Output PE's (prototypes)		& 60 \\
+\hline
+Class labels for prototypes    & all classes divided evenly among the prototypes \\
+\hline
+Learning rule                     & LVQ3\\
+  & 				for input ${\bf x; w}_c$ and ${\bf w}_s$ are first and second BMU with labels $y_c$ and $y_s$\\
+& $\Delta {\bf w}_c = \eta(t)({\bf x - w}), y_c \in C_x $ (label of input {\bf x})\\
+& $\Delta {\bf w}_c = -\eta(t)({\bf x - w}), y_c \notin C_x $\\
+&				$\Delta {\bf w}_s = \eta(t)({\bf x - w}), y_s \in C_x,\Vert {\bf x} - \frac{\bf w_c + w_s}{2} \Vert \leq  \frac{\Vert ({\bf w}_c - {\bf w}_s)\Vert}{4}, y_c \in C_l \neq C_x $ \\
+&   $\Delta {\bf w}_s = 0.25 \eta(t)({\bf x - w}), y_s \in C_x,\Vert {\bf x} - \frac{\bf w_c + w_s}{2} \Vert \leq  \frac{\Vert ({\bf w}_c - {\bf w}_s)\Vert}{4}, y_c \in  C_x $   \\
+\hline
+Initial weights                    & Drawn from uniform distribution on $[data_{min},data_{max}]$\\
+\hline
+Error measure                   &  percentage samples misclassified given current prototypes \\
+\hline
+Error tolerance (min. error allowed)                  & error $< 1$\\ 
+\hline
+Monitoring frequency of errors  (learning history) & 162 learning steps\\
+\hline
+Learning rate ($\eta(t)$)            & decaying step function (see below)\\
+& 	     $
+		\eta(t) = 
+		 \begin{cases} 
+     			 0.5 & t\leq 10^4\\
+			 0.2 & t \leq 2 \times 10^4  \\
+			 0.1 & t \leq 1.2 \times 10^5 \\
+			 0.005 & t > 1.2 \times 10^5 \\
+ 		  \end{cases}
+	    $ \\
+\hline
+Max allowed learning steps ($n$)   & $2 \times 10^3 \times \# training~samples = 1.62 \times 10^5$ \\
+\hline
+Stopping Criteria          & error tolerance satisfied OR maximum learning steps \\
+\hline
+\end{tabular}
+}
+\spar
+\begin{itemize}
+	\item  The code can use stopping criteria mentioned above but checking for classification error in each learn step is slow. So, this was disabled and all plots likewise stop at maximum learn steps. After looking at plots, the maximum allowed learning steps can be reduced.
+	\item classification error on training data is zero after about 120,000 learn steps.
+\end{itemize}
+\newpage
+\begin{figure}[h!]
+	\caption{Problem1/a: Learning History: percentage classification error on training data. Classification error for training data is zero after about 120,000 learn steps and training may be stopped.}
+	\includegraphics[width=\linewidth,height=0.7\linewidth]{prob1fig25_after_training_error_history__2017_3_20_2_3_16.png}
+\end{figure}
+
+\begin{figure}
+	\caption{Problem1/a: Training Data: classification region before(target) and after training.}
+	\begin{subfigmatrix}{2}
+		\subfigure{\includegraphics[width=0.45\linewidth,height=0.5\linewidth]{prob1fig1_before_training_class_map__2017_3_20_2_3_16.png}}
+		\subfigure{\includegraphics[width=0.45\linewidth,height=0.5\linewidth]{prob1fig23_after_training_class_map__2017_3_20_2_3_16.png}}
+	\end{subfigmatrix}
+\end{figure}
+
+
+\begin{figure}
+	\caption{Problem1/a: Training Data: classification region before(target) and after training with prototypes overlaid.}
+	\begin{subfigmatrix}{2}
+		\subfigure{\includegraphics[width=0.45\linewidth,height=0.5\linewidth]{diagnostic_prob1fig2__2017_3_20_2_3_16.png}}
+		\subfigure{\includegraphics[width=0.45\linewidth,height=0.5\linewidth]{prob1fig22_after_training_class_map_w__2017_3_20_2_3_16.png}}
+	\end{subfigmatrix}
+\end{figure}
+%
+%
+%
+% PROBLEM 1B
+%
+%
+%
+\clearpage
+
+\bpar
+{\bf Problem 1/b.}
+\spar
+%
+%
+%
+\begin{itemize}
+	\item To generate test data, each unit square of the classification map, shown in figure 2 as target classification map,  is divided equally into four squares. The centers of these smaller squares are test data points and receive the same class label as the bigger parent square
+	\item Test data is used to check classification with weights (prototypes) trained by the network in problem 1/a.
+		\begin{itemize}
+			\item classification error on training data = 0
+			\item classification error on test data = 6.790123 \%
+		\end{itemize}
+\end{itemize}
+
+\begin{figure}[h!]
+	\caption{Problem1/a: Test Data: classification region, test V/s training data, with voronoi regions overlaid}
+	\begin{subfigmatrix}{2}
+		\subfigure{\includegraphics[width=0.45\linewidth,height=0.5\linewidth]{prob1fig29_after_training_TEST_voronoi_map__2017_3_20_2_3_16.png}}
+		\subfigure{\includegraphics[width=0.45\linewidth,height=0.5\linewidth]{prob1fig24_after_training_voronoi_map__2017_3_20_2_3_16.png}}
+	\end{subfigmatrix}
+\end{figure}
+
+There is difference in classification regions reported for training and test data:
+\begin{itemize}
+	\item During training, some of the prototypes may not be updated after some learning steps because they are not BMP or appropriate second BMP for any of the data points (sparse data).
+	\item Test data is on a finer grid and therefore denser than training data. It is possible that a test data point may be near to one of the bad prototypes.
+\end{itemize}
+
+
+
+\clearpage
+\begin{figure}
+	\caption{Problem1/a: Test Data: classification region, desired V/s test data}
+	\begin{subfigmatrix}{2}
+		\subfigure{\includegraphics[width=0.45\linewidth,height=0.5\linewidth]{prob1fig26_before_training_TEST_class_map__2017_3_20_2_3_16.png}}
+		\subfigure{\includegraphics[width=0.45\linewidth,height=0.5\linewidth]{prob1fig28_after_training_TEST_class_map__2017_3_20_2_3_16.png}}
+	\end{subfigmatrix}
+\end{figure}
+
+
+\begin{figure}
+	\caption{Problem1/a: Test  Data: classification region comparison between Test Data and Training data}
+	\begin{subfigmatrix}{2}
+		\subfigure{\includegraphics[width=0.45\linewidth,height=0.5\linewidth]{prob1fig27_after_training_TEST_class_map_w__2017_3_20_2_3_16.png}}
+		\subfigure{\includegraphics[width=0.45\linewidth,height=0.5\linewidth]{prob1fig22_after_training_class_map_w__2017_3_20_2_3_16.png}}
+	\end{subfigmatrix}
+\end{figure}
+
+\newpage
+%
+%
+%
+% PROBLEM 2.1
+%
+%
+%
+\clearpage
+\bpar
+{\bf Problem 2.1.}
+\spar
+%
+%
+%
+\spar
+{
+\begin{tabular}{ll}
+\hline
+\hline
+\multicolumn{2}{c}{\textsc{  parameters for problem 2.1}} \\
+\hline
+\hline
+Data                    &     iris-train.txt \\
+\hline
+Pre-processing    &  data  pre-processed to have zero mean.\\
+\hline
+Learning rule       & MATLAB's \verb|pca| function\\
+\hline
+\end{tabular}
+}
+\spar
+The eigenvectors of the covariance matrix (iris-data) output from MATLAB's \verb|pca| command are
+\begin{align*}
+	{\bf P} &=	\begin{bmatrix}
+    					+0.399571 & +0.433045 & +0.743535 & -0.316181  \\
+    					-0.195320 & +0.898783 & -0.324819 & +0.220300  \\
+    					+0.611843 & -0.047899 & +0.034515 & +0.788773  \\
+    					+0.654096 & +0.048654 & -0.583486 & -0.478889  \\
+			\end{bmatrix} \text{\quad (columns are eigenvectors) }\\
+ \text{and } {\bf PP^T} &= {\bf I}  \text{\quad (verified this is true.) }
+\end{align*}
+\spar
+The eigenvalues are
+\begin{align*}
+	\begin{bmatrix}
+		0.240407  & 0.027730 & 0.012153  & 0.001782 \\
+	\end{bmatrix}
+\end{align*}
+\newpage
+%
+%
+%
+% PROBLEM 2.2
+%
+%
+%
+\clearpage
+\bpar
+{\bf Problem 2.2.}
+\spar
+%
+%
+%
+\spar
+{
+\begin{tabular}{ll}
+\hline
+\multicolumn{2}{c}{\textsc{  parameters for problem 2.2}} \\
+\hline
+\hline
+Data				& iris-train.txt \\
+\hline
+Pre-processing          &  data  pre-processed to have zero mean. \\
+\hline
+Output PE's			& 4 (number of principal components) \\
+\hline
+Learning rule                     & Sanger's Generalized Hebbian Algorithm\\
+\hline
+Initial weights                    & Drawn from uniform distribution on [-1,1] \\
+\hline
+Error measure                   &  error = max(abs($\mathbf{WW}^T-\mathbf{I}$)), where $\mathbf{W}$ are principal components.\\
+\hline
+Error tolerance (min. error allowed)                  & error $\leq 10^{-3}$\\ 
+\hline
+Monitoring frequency of errors  (learning history) & 7500 learning steps\\
+\hline
+Learning rate ($\eta$)            & [0.005, 0.005, 0.05, 0.1] (in decreasing order of principal components)\\
+\hline
+Max allowed learning steps ($n$)   & $10^5 \times \# training~samples = 7.5 \times 10^5$ \\
+\hline
+Stopping Criteria          & error tolerance satisfied OR maximum learning steps \\
+\hline
+\end{tabular}
+}
+\spar
+\begin{itemize}
+	\item Input data and pre-processing are same as in  problem 2.1.
+	\item Learning steps (when training stopped) =  66035
+	\item Initial weight matrix
+		\begin{align*}
+			{\bf W}_{initial}^T &=	\begin{bmatrix}
+    							-0.218681 & +0.606352 &-0.716551 & +0.935663  \\
+    							-0.150009 & -0.944676 & +0.321820 & -0.682719 \\
+    							-0.162697 &+0.437982 &-0.243795 &-0.918596  \\
+    							-0.709156 & -0.930127 & -0.740611 & +0.655475  \\
+						\end{bmatrix} \text{\quad (columns are weights) }\\
+			\text{error}_{initial} &= 1.61504 \\
+		\end{align*}
+	\item Final weight matrix (principal components when training stopped)
+		\begin{align*}
+			{\bf W}_{final}^T &=	\begin{bmatrix}
+    							-0.399747  & -0.423384  & +0.749523 & +0.316512  \\
+    							+0.195270 & -0.903179  & -0.312037  & -0.221423 \\
+    							-0.612069  & +0.048483 & +0.034335 & -0.789011  \\
+    							-0.653862  & -0.056377  &  -0.583404 & +0.478173  \\
+						\end{bmatrix} \text{\quad (columns are weights) }\\
+			abs({\bf WW}^T-{\bf I} ) &=	\begin{bmatrix}
+    									+0.000092 & +0.000071  & +0.000100 & +0.000405  \\
+    									+0.000071 & +0.000516  & +0.000956 & +0.000758 \\
+    									+0.000100 & +0.000956 	& +0.000690 & +0.000174  \\
+    									+0.000405 & +0.000758 	& +0.000174 & +0.000547 \\
+								\end{bmatrix} \\
+			\text{error}_{final} &=  0.000956 \\
+		\end{align*}
+	\item  Principal components returned by MATLAB's \verb|pca| and  $\mathbf{W}_{final}$ are compared by correlating their respective eigenvectors.  The correlation coefficients are
+		\begin{align*}
+			\begin{bmatrix}
+    				-1.000046, & -1.000172,  & +1.000246, & -1.000272 \\
+			\end{bmatrix} \text{\quad (expected values are $\pm 1$) }\\
+		\end{align*}
+	\item After aligning the eigenvectors (multiply by $\pm 1$ as needed), the difference (L2 norm) between eigenvectors estimated by MATLAB's \verb|pca| and Sanger's GHA is
+		\begin{align*}
+			\begin{bmatrix}
+    				1 \times 10^{-7}, &    1.728 \times 10^{-4},  &  1.996 \times 10^{-4},   &  2 \times 10^{-7}  \\
+			\end{bmatrix} \text{\quad (expected values are 0) }\\
+		\end{align*}
+%           \item Learning history, and a few other plots are on next few pages. From the plots, it is clear that minimum principal component is slowest to converge.
+\end{itemize}
+\newpage
+\begin{figure}[h!]
+\caption{Problem2.2: Learning History: diagonal elements of abs$({\bf WW}^T - {\bf I})$. Elements 1 through 4  correspond to principal components from largest to lowest. }
+\includegraphics[width=\linewidth,height=0.5\linewidth]{prob2fig15_after_training_diagonal_diff__2017_3_19_16_59_42.png}
+\end{figure}
+
+\begin{figure}[h!]
+\caption{Problem2.2: Error History: error = max(abs$({\bf WW}^T - {\bf I})$).}
+\includegraphics[width=\linewidth,height=0.5\linewidth]{prob2fig10_after_training_error_history__2017_3_19_16_59_42.png}
+\end{figure}
+
+\begin{figure}[h!]
+\caption{Problem2.2: Principal Component 1 : convergence for each element of vector}
+\includegraphics[width=\linewidth,height=0.5\linewidth]{prob2fig11_after_training_principal_component__2017_3_19_16_59_42.png}
+\end{figure}
+
+\begin{figure}[h!]
+\caption{Problem2.2: Principal Component 2 : convergence for each element of vector}
+\includegraphics[width=\linewidth,height=0.5\linewidth]{prob2fig12_after_training_principal_component__2017_3_19_16_59_42.png}
+\end{figure}
+
+\begin{figure}[h!]
+\caption{Problem2.2: Principal Component 3 : convergence for each element of vector}
+\includegraphics[width=\linewidth,height=0.5\linewidth]{prob2fig13_after_training_principal_component__2017_3_19_16_59_42.png}
+\end{figure}
+
+\begin{figure}[h!]
+\caption{Problem2.2: Principal Component 4 : convergence for each element of vector}
+\includegraphics[width=\linewidth,height=0.5\linewidth]{prob2fig14_after_training_principal_component__2017_3_19_16_59_42.png}
+\end{figure}
+
+
+\begin{figure}
+	\caption{Problem2.2: ${\bf W W}^T$: plotted on gray scale color map during training at different learn steps}
+	\begin{subfigmatrix}{2}
+		\subfigure{\includegraphics[width=0.45\linewidth,height=0.8\linewidth]{diagnostic_fig1__2017_3_19_16_59_42.png}}
+		\subfigure{\includegraphics[width=0.45\linewidth,height=0.8\linewidth]{diagnostic_fig2__2017_3_19_16_59_42.png}}
+		\subfigure{\includegraphics[width=0.45\linewidth,height=0.8\linewidth]{diagnostic_fig3__2017_3_19_16_59_42.png}}
+		\subfigure{\includegraphics[width=0.45\linewidth,height=0.8\linewidth]{diagnostic_fig4__2017_3_19_16_59_42.png}}
+		\subfigure{\includegraphics[width=0.45\linewidth,height=0.8\linewidth]{diagnostic_fig5__2017_3_19_16_59_42.png}}
+		\subfigure{\includegraphics[width=0.45\linewidth,height=0.8\linewidth]{diagnostic_fig8__2017_3_19_16_59_42.png}}
+	\end{subfigmatrix}
+\end{figure}
+
+%
+%
+%
+% APPENDIX
+%
+%
+%
+%\markboth{}{\hfil \textbf{APPENDIX (best results picked from these experiments for problem 2.1)} }
+%\begin{landscape}
+%\begin{figure}[h!]
+%\caption{Varying learning rate, Learning History}
+%\includegraphics[width=\linewidth,height=0.7\linewidth]{prob2fig_data_compare_learn_rate__2017_2_22_16_29_39.png}
+%\end{figure}
+%\end{landscape}
+%
+%\begin{landscape}
+%\begin{figure}[h!]
+%\caption{Varying learning rate, Desired vs Actual output}
+%\includegraphics[width=\linewidth,height=0.7\linewidth]{prob2fig_error_history_learn_rate__2017_2_22_16_29_39.png}
+%\end{figure}
+%\end{landscape}
+%
+
+\end{document}
+
+
